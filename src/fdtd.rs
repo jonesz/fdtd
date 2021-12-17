@@ -6,7 +6,7 @@
 pub const IMP0: f64 = 377.0;
 
 pub struct FDTDSim {
-    qTime: f64,
+    q_time: f64,
     sz: usize,
     ez: Vec<f64>,
     hy: Vec<f64>,
@@ -20,7 +20,7 @@ impl FDTDSim {
         hy.resize(sz, 0.0);
 
         FDTDSim {
-            qTime: 0.0,
+            q_time: 0.0,
             sz,
             ez,
             hy,
@@ -40,7 +40,7 @@ impl FDTDSim {
     }
 
     fn source(&mut self) {
-        self.ez[0] = (-(self.qTime - 30.0) * (self.qTime - 30.0) / 100.0).exp();
+        self.ez[0] = (-(self.q_time - 30.0) * (self.q_time - 30.0) / 100.0).exp();
     }
 
     pub fn step(&mut self) {
@@ -48,10 +48,14 @@ impl FDTDSim {
         self.update_electric();
 
         self.source();
-        self.qTime += 1.0;
+        self.q_time += 1.0;
     }
 
     pub fn ez50(&self) -> f64 {
         self.ez[50]
+    }
+
+    pub fn ez_dump(&self) -> &[f64] {
+        self.ez.as_slice()
     }
 }
