@@ -39,15 +39,19 @@ impl FDTDSim {
         }
     }
 
-    fn source(&mut self) {
+    fn _hardwired_source(&mut self) {
         self.ez[0] = (-(self.q_time - 30.0) * (self.q_time - 30.0) / 100.0).exp();
+    }
+
+    fn additive_source(&mut self) {
+        self.ez[50] += (-(self.q_time - 30.0) * (self.q_time - 30.0) / 100.0).exp();
     }
 
     pub fn step(&mut self) {
         self.update_magnetic();
         self.update_electric();
 
-        self.source();
+        self.additive_source();
         self.q_time += 1.0;
     }
 
