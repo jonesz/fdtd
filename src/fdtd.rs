@@ -1,10 +1,13 @@
 // src/fdtd.rs
-/// Referenced from "Understanding the Finite-Difference Time-Domain Method"
-/// by John. B Schneider; https://eecs.wsu.edu/~schneidj/ufdtd/ufdtd.pdf.
+//! Referenced from "Understanding the Finite-Difference Time-Domain Method"
+//! by John. B Schneider; https://eecs.wsu.edu/~schneidj/ufdtd/ufdtd.pdf.
+
+use serde::Serialize;
 
 /// Characteristic impedance of free space.
 pub const IMP0: f64 = 377.0;
 
+#[derive(Serialize)]
 pub struct FDTDSim {
     q_time: f64,
     sz: usize,
@@ -56,7 +59,6 @@ impl FDTDSim {
     }
 
     pub fn step(&mut self) {
-
         self.abc_magnetic();
         self.update_magnetic();
 
