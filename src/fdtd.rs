@@ -27,6 +27,14 @@ impl FDTDSim {
         }
     }
 
+    fn abc_magnetic(&mut self) {
+        self.hy[self.sz - 1] = self.hy[self.sz - 2];
+    }
+
+    fn abc_electric(&mut self) {
+        self.ez[0] = self.ez[1];
+    }
+
     fn update_magnetic(&mut self) {
         for mm in 0..self.sz - 1 {
             self.hy[mm] = self.hy[mm] + (self.ez[mm + 1] - self.ez[mm]) / IMP0;
@@ -48,7 +56,11 @@ impl FDTDSim {
     }
 
     pub fn step(&mut self) {
+
+        self.abc_magnetic();
         self.update_magnetic();
+
+        self.abc_electric();
         self.update_electric();
 
         self.additive_source();
