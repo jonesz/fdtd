@@ -1,18 +1,22 @@
 // src/snapshot.rs
 use crate::fdtd::FDTDSim;
-use std::fs::File;
+use std::fs;
 use std::io::prelude::*;
 use std::time::SystemTime;
 
-pub fn write(sim: &FDTDSim, iteration: usize) -> std::io::Result<()> {
-    let fname = match SystemTime::now().duration_since(SystemTime::UNIX_EPOCH) {
-        Ok(t) => format!("snapshot{}-{}.json", t.as_secs(), iteration),
+pub fn create_output_dir() -> std::io::Result<String> {
+    let fdir = match SystemTime::now().duration_since(SystemTime::UNIX_EPOCH) {
+        Ok(t) => format!("snapshots{}", t.as_secs()),
         Err(_) => panic!("Unable to capture time since UNIX epoch."),
     };
 
-    let mut file = File::create(fname)?;
+    fs::create_dir(&fdir)?;
+    Ok(fdir)
+}
+
+pub fn write(sim: &FDTDSim, fdir: &String, iteration: usize) -> std::io::Result<()> {
+    let mut file = fs::File::create(format!("{}/{}.json", fdir, iteration))?;
     let serialized = serde_json::to_string(sim).unwrap();
     file.write(serialized.as_bytes())?;
-
     Ok(())
 }
