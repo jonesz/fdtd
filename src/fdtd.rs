@@ -50,22 +50,33 @@ impl FDTDSim {
         }
     }
 
+    fn tfsf_magnetic_correction(&mut self) {
+        self.hy[49] -= (-(self.q_time - 30.0) * (self.q_time - 30.0) / 100.0).exp() / IMP0;
+    }
+
+    fn tfsf_electric_correction(&mut self) {
+        self.ez[50] += (-(self.q_time + 0.5 - (-0.5) - 30.0) * (self.q_time + 0.5 - (-0.5) - 30.0)
+            / 100.0)
+            .exp();
+    }
+
     fn _hardwired_source(&mut self) {
         self.ez[0] = (-(self.q_time - 30.0) * (self.q_time - 30.0) / 100.0).exp();
     }
 
-    fn additive_source(&mut self) {
+    fn _additive_source(&mut self) {
         self.ez[50] += (-(self.q_time - 30.0) * (self.q_time - 30.0) / 100.0).exp();
     }
 
     pub fn step(&mut self) {
         self.abc_magnetic();
         self.update_magnetic();
+        self.tfsf_magnetic_correction();
 
         self.abc_electric();
         self.update_electric();
+        self.tfsf_electric_correction();
 
-        self.additive_source();
         self.q_time += 1.0;
     }
 
