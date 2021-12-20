@@ -13,20 +13,40 @@ pub struct FDTDSim {
     sz: usize,
     ez: Vec<f64>,
     hy: Vec<f64>,
+    eps_r: Vec<f64>,
+    mu_r: Vec<f64>,
+    ceze: Vec<f64>,
+    cezh: Vec<f64>,
 }
 
 impl FDTDSim {
     pub fn new(sz: usize) -> Self {
+        // Create and zero.
         let mut ez = Vec::new();
         let mut hy = Vec::new();
+        let mut eps_r = Vec::new();
+        let mut mu_r = Vec::new();
+        let mut ceze = Vec::new();
+        let mut cezh = Vec::new();
+
         ez.resize(sz, 0.0);
         hy.resize(sz, 0.0);
+
+        eps_r.resize(sz, 1.0);
+        mu_r.resize(sz, 1.0);
+
+        ceze.resize(sz, 0.0);
+        cezh.resize(sz, 0.0);
 
         FDTDSim {
             q_time: 0.0,
             sz,
             ez,
             hy,
+            eps_r,
+            mu_r,
+            ceze,
+            cezh,
         }
     }
 
@@ -40,13 +60,13 @@ impl FDTDSim {
 
     fn update_magnetic(&mut self) {
         for mm in 0..self.sz - 1 {
-            self.hy[mm] = self.hy[mm] + (self.ez[mm + 1] - self.ez[mm]) / IMP0;
+            self.hy[mm] = self.hy[mm] + (self.ez[mm + 1] - self.ez[mm]) / IMP0 / self.mu_r[mm];
         }
     }
 
     fn update_electric(&mut self) {
         for mm in 1..self.sz {
-            self.ez[mm] = self.ez[mm] + (self.hy[mm] - self.hy[mm - 1]) * IMP0;
+            self.ez[mm] = self.ez[mm] + (self.hy[mm] - self.hy[mm - 1]) * IMP0 / self.eps_r[mm];
         }
     }
 
