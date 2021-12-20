@@ -9,8 +9,12 @@ deserialized = json.load(f)
 ez = deserialized['ez']
 
 # TODO: Axes limits.
+
+fig, ax = plt.subplots()
 plt.title(sys.argv[1])
 plt.xlabel('Spatial Step')
 plt.ylabel('Ez (V/m)')
-plt.plot([x for x in range(len(ez))], ez)
+
+ax.plot([x for x in range(len(ez))], ez)
+ax.set_ylim(0, 1)
 plt.show()
