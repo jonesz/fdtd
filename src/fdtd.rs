@@ -12,13 +12,15 @@ pub struct Grid {
     // Grid components.
     sz: usize,
 
-    ez: Vec<f64>,
-    ceze: Vec<f64>,
-    cezh: Vec<f64>,
+    // TODO: Rather than expose these as public, provide getter/setter
+    // functions?
+    pub ez: Vec<f64>,
+    pub ceze: Vec<f64>,
+    pub cezh: Vec<f64>,
 
-    hy: Vec<f64>,
-    chyh: Vec<f64>,
-    chye: Vec<f64>,
+    pub hy: Vec<f64>,
+    pub chyh: Vec<f64>,
+    pub chye: Vec<f64>,
 
     cdtds: f64, // Courant number.
 }
@@ -40,29 +42,14 @@ impl Grid {
 }
 
 // Default functions that the compiler can hopefully optimize into NOPs.
-fn tfsf_default(_g: &mut Grid) {
-    return;
-}
-
-fn abc_default(_g: &mut Grid) {
-    return;
-}
-
-fn source_default(_g: &mut Grid) {
-    return;
-}
-
-fn snapshot_default(_t: usize, _g: &mut Grid) {
+fn default_nop(_: usize, _g: &mut Grid) {
     return;
 }
 
 pub struct FDTDSim {
     g: Grid,
-    abc: fn(&mut Grid),
-    tfsf: fn(&mut Grid),
-    source: fn(&mut Grid),
-    snapshot: fn(usize, &mut Grid),
-
+    post_magnetic: fn(usize, &mut Grid),
+    post_electric: fn(usize, &mut Grid),
     time: usize,
 }
 
@@ -118,10 +105,8 @@ impl FDTDSim {
             };
             Ok(FDTDSim {
                 g,
-                abc: abc_default,
-                tfsf: tfsf_default,
-                source: source_default,
-                snapshot: snapshot_default,
+                post_magnetic: default_nop,
+                post_electric: default_nop,
                 time: 0,
             })
         }
@@ -131,36 +116,24 @@ impl FDTDSim {
         FDTDSim::new_opts(sz, None, None, None, None, None, None, None)
     }
 
-    pub fn abc_set(&mut self, abc: Option<fn(&mut Grid)>) {
-        self.abc = abc.unwrap_or(abc_default);
+    pub fn post_magnetic_set(&mut self, f: Option<fn(usize, &mut Grid)>) {
+        self.post_magnetic = f.unwrap_or(default_nop);
     }
 
-    pub fn tfsf_set(&mut self, tfsf: Option<fn(&mut Grid)>) {
-        self.tfsf = tfsf.unwrap_or(tfsf_default);
-    }
-
-    pub fn source_set(&mut self, source: Option<fn(&mut Grid)>) {
-        self.source = source.unwrap_or(source_default);
-    }
-
-    pub fn snapshot_set(&mut self, snapshot: Option<fn(usize, &mut Grid)>) {
-        self.snapshot = snapshot.unwrap_or(snapshot_default);
+    pub fn post_electric_set(&mut self, f: Option<fn(usize, &mut Grid)>) {
+        self.post_electric = f.unwrap_or(default_nop);
     }
 
     pub fn step(&mut self) {
+        self.time += 1;
         self.g.update_magnetic();
 
-        let tfsf_fn = self.tfsf;
-        tfsf_fn(&mut self.g);
-
-        let abc_fn = self.abc;
-        abc_fn(&mut self.g);
+        let post_magnetic = self.post_magnetic;
+        post_magnetic(self.time, &mut self.g);
 
         self.g.update_electric();
 
-        self.time += 1;
-
-        let snapshot_fn = self.snapshot;
-        snapshot_fn(self.time, &mut self.g);
+        let post_electric = self.post_electric;
+        post_electric(self.time, &mut self.g);
     }
 }
