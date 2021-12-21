@@ -1,5 +1,5 @@
 // src/snapshot.rs
-use crate::fdtd::FDTDSim;
+use crate::fdtd::Grid;
 use std::fs;
 use std::io::prelude::*;
 use std::time::SystemTime;
@@ -14,9 +14,10 @@ pub fn create_output_dir() -> std::io::Result<String> {
     Ok(fdir)
 }
 
-pub fn write(sim: &FDTDSim, fdir: &String, iteration: usize) -> std::io::Result<()> {
+/// Write to an FDTD grid.
+pub fn write(grid: &Grid, fdir: &String, iteration: usize) -> std::io::Result<()> {
     let mut file = fs::File::create(format!("{}/{}.json", fdir, iteration))?;
-    let serialized = serde_json::to_string(sim).unwrap();
+    let serialized = serde_json::to_string(grid).unwrap();
     file.write(serialized.as_bytes())?;
     Ok(())
 }
