@@ -17,7 +17,6 @@ pub struct Grid {
     pub ez: Vec<f64>,
     pub ceze: Vec<f64>,
     pub cezh: Vec<f64>,
-
     pub hy: Vec<f64>,
     pub chyh: Vec<f64>,
     pub chye: Vec<f64>,
@@ -41,19 +40,25 @@ impl Grid {
     }
 }
 
-// Default functions that the compiler can hopefully optimize into NOPs.
-fn default_nop(_: usize, _g: &mut Grid) {
-    return;
-}
-
-pub struct FDTDSim {
+pub struct FDTDSim<A, B>
+where
+    A: Fn(usize, &mut Grid), // post-magnetic update.
+    B: Fn(usize, &mut Grid), // post-electric update.
+{
     g: Grid,
-    post_magnetic: fn(usize, &mut Grid),
-    post_electric: fn(usize, &mut Grid),
+
+    // TODO: There's multiple ways to do this: function pointers, closures,
+    // boxed closures, etc. What's the most performant/flexible?
+    post_magnetic: Option<A>,
+    post_electric: Option<B>,
     time: usize,
 }
 
-impl FDTDSim {
+impl<A, B> FDTDSim<A, B>
+where
+    A: Fn(usize, &mut Grid),
+    B: Fn(usize, &mut Grid),
+{
     /// Create a new FDTDSimulation with pre-computed parameters:
     pub fn new_opts(
         sz: usize,
@@ -105,8 +110,8 @@ impl FDTDSim {
             };
             Ok(FDTDSim {
                 g,
-                post_magnetic: default_nop,
-                post_electric: default_nop,
+                post_magnetic: None,
+                post_electric: None,
                 time: 0,
             })
         }
@@ -116,24 +121,28 @@ impl FDTDSim {
         FDTDSim::new_opts(sz, None, None, None, None, None, None, None)
     }
 
-    pub fn post_magnetic_set(&mut self, f: Option<fn(usize, &mut Grid)>) {
-        self.post_magnetic = f.unwrap_or(default_nop);
+    pub fn set_post_magnetic(&mut self, f: Option<A>) {
+        self.post_magnetic = f;
     }
 
-    pub fn post_electric_set(&mut self, f: Option<fn(usize, &mut Grid)>) {
-        self.post_electric = f.unwrap_or(default_nop);
+    pub fn set_post_electric(&mut self, f: Option<B>) {
+        self.post_electric = f;
     }
 
     pub fn step(&mut self) {
         self.time += 1;
         self.g.update_magnetic();
 
-        let post_magnetic = self.post_magnetic;
-        post_magnetic(self.time, &mut self.g);
+        match &self.post_magnetic {
+            Some(v) => v(self.time, &mut self.g),
+            None => (),
+        }
 
         self.g.update_electric();
 
-        let post_electric = self.post_electric;
-        post_electric(self.time, &mut self.g);
+        match &self.post_electric {
+            Some(v) => v(self.time, &mut self.g),
+            None => (),
+        }
     }
 }
