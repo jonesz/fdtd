@@ -10,7 +10,7 @@ pub const IMP0: f64 = 377.0;
 #[derive(Serialize)]
 pub struct Grid {
     // Grid components.
-    sz: usize,
+    pub sz: usize,
 
     // TODO: Rather than expose these as public, provide getter/setter
     // functions?
@@ -42,8 +42,8 @@ impl Grid {
 
 pub struct FDTDSim<A, B>
 where
-    A: Fn(usize, &mut Grid), // post-magnetic update.
-    B: Fn(usize, &mut Grid), // post-electric update.
+    A: FnMut(usize, &mut Grid), // post-magnetic update.
+    B: FnMut(usize, &mut Grid), // post-electric update.
 {
     g: Grid,
 
@@ -56,8 +56,8 @@ where
 
 impl<A, B> FDTDSim<A, B>
 where
-    A: Fn(usize, &mut Grid),
-    B: Fn(usize, &mut Grid),
+    A: FnMut(usize, &mut Grid),
+    B: FnMut(usize, &mut Grid),
 {
     /// Create a new FDTDSimulation with pre-computed parameters:
     pub fn new_opts(
@@ -133,14 +133,14 @@ where
         self.time += 1;
         self.g.update_magnetic();
 
-        match &self.post_magnetic {
+        match &mut self.post_magnetic {
             Some(v) => v(self.time, &mut self.g),
             None => (),
         }
 
         self.g.update_electric();
 
-        match &self.post_electric {
+        match &mut self.post_electric {
             Some(v) => v(self.time, &mut self.g),
             None => (),
         }

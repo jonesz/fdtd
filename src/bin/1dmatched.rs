@@ -9,7 +9,6 @@ const LOSS: f64 = 0.02;
 const LOSS_LAYER: usize = 180;
 
 fn main() {
-
     // Build the electric field update coefficients.
     let mut ceze = Vec::with_capacity(SIZE);
     let mut cezh = Vec::with_capacity(SIZE);
