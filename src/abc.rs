@@ -2,7 +2,7 @@
 use crate::fdtd::Grid;
 
 // 1st order 1D advection ABC.
-fn advection_abc(cezh: &[f64], chye: &[f64]) -> impl FnMut(usize, &mut Grid) {
+pub fn advection_abc_1st_order(cezh: &[f64], chye: &[f64]) -> impl FnMut(usize, &mut Grid) {
     let len = cezh.len();
 
     let tmp = (cezh[0] * chye[0]).sqrt();
