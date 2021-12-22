@@ -33,9 +33,9 @@ impl Grid {
     }
 
     fn update_electric(&mut self) {
-        for mm in 1..self.sz {
+        for mm in 1..self.sz - 1 {
             self.ez[mm] =
-                self.ceze[mm] + self.ez[mm] + self.cezh[mm] * (self.hy[mm] - self.hy[mm - 1]);
+                self.ceze[mm] * self.ez[mm] + self.cezh[mm] * (self.hy[mm] - self.hy[mm - 1]);
         }
     }
 }
