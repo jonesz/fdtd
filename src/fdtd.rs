@@ -26,7 +26,7 @@ pub struct Grid {
 
 impl Grid {
     fn update_magnetic(&mut self) {
-        for mm in 0..self.sz {
+        for mm in 0..self.sz - 1 {
             self.hy[mm] =
                 self.chyh[mm] * self.hy[mm] + self.chye[mm] * (self.ez[mm + 1] - self.ez[mm]);
         }
