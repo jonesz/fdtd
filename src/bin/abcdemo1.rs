@@ -1,6 +1,6 @@
 // Rust port of the 1st order ABC demo 'Program 6.2'.
 use fdtd::abc;
-use fdtd::fdtd::{FDTDSim, Grid, IMP0};
+use fdtd::fdtd::{FDTDSim, Grid, GridDimension, IMP0};
 use fdtd::snapshot;
 
 const SIZE: usize = 200;
@@ -66,6 +66,7 @@ fn main() {
     // Create the FDTDSim.
     let mut fdtd_sim = match FDTDSim::new_opts(
         SIZE,
+        GridDimension::One,
         None,
         Some(ceze),
         Some(cezh),

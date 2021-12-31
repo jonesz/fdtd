@@ -7,6 +7,26 @@ use serde::Serialize;
 /// Characteristic impedance of free space.
 pub const IMP0: f64 = 377.0;
 
+/// TM^z or TE^z.
+#[derive(Copy, Clone)]
+pub enum Polarization {
+    Magnetic,
+    Electric,
+}
+
+#[derive(Copy, Clone)]
+pub enum GridDimension {
+    One,
+    Two(Polarization),
+    Three,
+}
+
+impl Default for GridDimension {
+    fn default() -> Self {
+        GridDimension::One
+    }
+}
+
 #[derive(Serialize)]
 pub struct Grid {
     // Grid components.
@@ -25,17 +45,35 @@ pub struct Grid {
 }
 
 impl Grid {
-    fn update_magnetic(&mut self) {
+    fn magnetic_1d(&mut self) {
         for mm in 0..self.sz - 1 {
             self.hy[mm] =
                 self.chyh[mm] * self.hy[mm] + self.chye[mm] * (self.ez[mm + 1] - self.ez[mm]);
         }
     }
 
-    fn update_electric(&mut self) {
+    fn update_magnetic(&mut self, d: GridDimension) {
+        match d {
+            GridDimension::One => self.magnetic_1d(),
+            GridDimension::Two(Polarization::Magnetic) => panic!("Unimplemented!"),
+            GridDimension::Two(Polarization::Electric) => panic!("Unimplemented!"),
+            GridDimension::Three => panic!("Unimplemented!"),
+        }
+    }
+
+    fn electric_1d(&mut self) {
         for mm in 1..self.sz - 1 {
             self.ez[mm] =
                 self.ceze[mm] * self.ez[mm] + self.cezh[mm] * (self.hy[mm] - self.hy[mm - 1]);
+        }
+    }
+
+    fn update_electric(&mut self, d: GridDimension) {
+        match d {
+            GridDimension::One => self.electric_1d(),
+            GridDimension::Two(Polarization::Magnetic) => panic!("Unimplemented!"),
+            GridDimension::Two(Polarization::Electric) => panic!("Unimplemented!"),
+            GridDimension::Three => panic!("Unimplemented!"),
         }
     }
 }
@@ -46,6 +84,7 @@ where
     B: FnMut(usize, &mut Grid), // post-electric update.
 {
     g: Grid,
+    dimension: GridDimension,
 
     // TODO: There's multiple ways to do this: function pointers, closures,
     // boxed closures, etc. What's the most performant/flexible?
@@ -62,6 +101,7 @@ where
     /// Create a new FDTDSimulation with pre-computed parameters:
     pub fn new_opts(
         sz: usize,
+        dimension: GridDimension,
         ez: Option<Vec<f64>>,
         ceze: Option<Vec<f64>>,
         cezh: Option<Vec<f64>>,
@@ -110,6 +150,7 @@ where
             };
             Ok(FDTDSim {
                 g,
+                dimension,
                 post_magnetic: None,
                 post_electric: None,
                 time: 0,
@@ -118,7 +159,17 @@ where
     }
 
     pub fn new(sz: usize) -> Result<Self, error::FDTDError> {
-        FDTDSim::new_opts(sz, None, None, None, None, None, None, None)
+        FDTDSim::new_opts(
+            sz,
+            GridDimension::default(),
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
     }
 
     pub fn set_post_magnetic(&mut self, f: Option<A>) {
@@ -131,14 +182,14 @@ where
 
     pub fn step(&mut self) {
         self.time += 1;
-        self.g.update_magnetic();
+        self.g.update_magnetic(self.dimension);
 
         match &mut self.post_magnetic {
             Some(v) => v(self.time, &mut self.g),
             None => (),
         }
 
-        self.g.update_electric();
+        self.g.update_electric(self.dimension);
 
         match &mut self.post_electric {
             Some(v) => v(self.time, &mut self.g),
