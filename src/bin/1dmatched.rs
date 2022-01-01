@@ -1,7 +1,7 @@
 // 1D FDTD simulation of a lossless dielectric region followed by a lossy
 // layer which matches the impedance of the dielectric. Rust port of
 // the 'Program 3.8'.
-use fdtd::fdtd::{FDTDSim, Grid, GridDimension, IMP0};
+use fdtd::fdtd::{FDTDSim, Grid, IMP0};
 use fdtd::snapshot;
 
 const SIZE: usize = 200;
