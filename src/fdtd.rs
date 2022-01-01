@@ -65,6 +65,16 @@ pub struct Grid {
     cdtds: f64, // Courant number.
 }
 
+macro_rules! dim {
+    ($grid:ident, $vec:ident, $x:expr, $y:expr) => {
+        $grid.$vec[$x * $grid.y_sz + $y]
+    };
+
+    ($vec:ident, $x:expr, $y:expr, $z:expr) => {
+        panic!()
+    };
+}
+
 impl Grid {
     fn magnetic_1d(&mut self) {
         for mm in 0..self.x_sz - 1 {
@@ -75,11 +85,23 @@ impl Grid {
 
     fn magnetic_2d(&mut self) {
         for mm in 0..self.x_sz {
-            for nn in 0..self.y_sz - 1 {}
+            for nn in 0..self.y_sz - 1 {
+                // hx(mm, nn) = chxh(mm, nn) * hx(mm, nn) - chxe(mm, nn)
+                // * (ez(mm, nn + 1) - ez(mm, nn))
+                dim!(self, hx, mm, nn) = dim!(self, chxh, mm, nn) * dim!(self, hx, mm, nn)
+                    - dim!(self, chxe, mm, nn)
+                        * (dim!(self, ez, mm, (nn + 1)) - dim!(self, ez, mm, nn));
+            }
         }
 
         for mm in 0..self.x_sz - 1 {
-            for nn in 0..self.y_sz {}
+            for nn in 0..self.y_sz {
+                // hy(mm, nn) = chyh(mm, nn) * hy(mm, nn) + chye(mm, nn)
+                // * (ez((mm + 1), nn) - ez(mm, nn))
+                dim!(self, hy, mm, nn) = dim!(self, chyh, mm, nn) * dim!(self, hy, mm, nn)
+                    + dim!(self, chye, mm, nn)
+                        * (dim!(self, ez, (mm + 1), nn) - dim!(self, ez, mm, nn));
+            }
         }
     }
 
@@ -101,7 +123,15 @@ impl Grid {
 
     fn electric_2d(&mut self) {
         for mm in 1..self.x_sz - 1 {
-            for nn in 1..self.y_sz - 1 {}
+            for nn in 1..self.y_sz - 1 {
+                // ez(mm, nn) = ceze(mm, nn) * ez(mm, nn) + cezh(mm, nn)
+                // * ((hy(mm, nn) - hy((mm - 1), nn)) - (hx(mm, nn) - hx(mm, (nn - 1))))
+                dim!(self, ez, mm, nn) = dim!(self, ceze, mm, nn) * dim!(self, ez, mm, nn)
+                    + dim!(self, cezh, mm, nn)
+                        * (dim!(self, hy, mm, nn)
+                            - dim!(self, hy, (mm - 1), nn)
+                            - (dim!(self, hx, mm, nn) - dim!(self, hx, mm, (nn - 1))));
+            }
         }
     }
 
