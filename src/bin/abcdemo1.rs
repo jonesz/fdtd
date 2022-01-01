@@ -64,9 +64,8 @@ fn main() {
     };
 
     // Create the FDTDSim.
-    let mut fdtd_sim = match FDTDSim::new_opts(
+    let mut fdtd_sim = match FDTDSim::new_1d(
         SIZE,
-        GridDimension::One,
         None,
         Some(ceze),
         Some(cezh),

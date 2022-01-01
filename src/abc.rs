@@ -14,7 +14,7 @@ pub fn advection_abc_1st_order(cezh: &[f64], chye: &[f64]) -> impl FnMut(usize, 
     let mut old_right: f64 = 0.0;
 
     let f = move |_: usize, g: &mut Grid| {
-        let end = g.sz;
+        let end = g.x_sz;
 
         g.ez[0] = old_left + coef_left * (g.ez[1] - g.ez[0]);
         old_left = g.ez[1];
@@ -52,7 +52,7 @@ pub fn advection_abc_2nd_order(cezh: &[f64], chye: &[f64]) -> impl FnMut(usize, 
     let mut old_right2 = [0.0, 0.0, 0.0];
 
     let f = move |_: usize, g: &mut Grid| {
-        let end = g.sz;
+        let end = g.x_sz;
 
         g.ez[0] = coef_left[0] * (g.ez[2] + old_left2[0])
             + coef_left[1] * (old_left1[0] + old_left1[2] - g.ez[1] - old_left2[1])
