@@ -152,6 +152,9 @@ fn vec_of_sz(sz: usize, v: f64) -> Vec<f64> {
     r
 }
 
+// TODO: Closures that fit type of A/B must be specified for compilation,
+// even if the function is a NOP. This requires the programmer to write a NOP
+// function then pass it; is this avoidable?
 pub struct FDTDSim<A, B>
 where
     A: FnMut(usize, &mut Grid), // post-magnetic update.
@@ -167,6 +170,8 @@ where
     time: usize,
 }
 
+// TODO: See above note in FDTDSim about A/B specification when we want NOP
+// functions.
 impl<A, B> FDTDSim<A, B>
 where
     A: FnMut(usize, &mut Grid),
@@ -240,6 +245,7 @@ where
         }
     }
 
+    /// Build a new 2d simulation.
     pub fn new_2d(
         x_sz: usize,
         y_sz: usize,
