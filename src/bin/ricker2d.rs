@@ -52,7 +52,7 @@ fn main() {
     fdtd_sim.set_post_magnetic(Some(post_magnetic));
     fdtd_sim.set_post_electric(Some(post_electric));
 
-    for _ in 0..450 {
+    for _ in 0..300 {
         fdtd_sim.step();
     }
 }
