@@ -65,13 +65,57 @@ pub struct Grid {
     cdtds: f64, // Courant number.
 }
 
-macro_rules! dim {
-    ($grid:ident, $vec:ident, $x:expr, $y:expr) => {
-        $grid.$vec[$x * $grid.y_sz + $y]
+macro_rules! hx {
+    ($grid:ident, $x:expr, $y:expr) => {
+        $grid.hx[$x * ($grid.y_sz - 1) + $y]
     };
+}
 
-    ($vec:ident, $x:expr, $y:expr, $z:expr) => {
-        panic!()
+macro_rules! chxh {
+    ($grid:ident, $x:expr, $y:expr) => {
+        $grid.hx[$x * ($grid.y_sz - 1) + $y]
+    };
+}
+
+macro_rules! chxe {
+    ($grid:ident, $x:expr, $y:expr) => {
+        $grid.hx[$x * ($grid.y_sz - 1) + $y]
+    };
+}
+
+macro_rules! hy {
+    ($grid:ident, $x:expr, $y:expr) => {
+        $grid.hx[$x * ($grid.y_sz) + $y]
+    };
+}
+
+macro_rules! chyh {
+    ($grid:ident, $x:expr, $y:expr) => {
+        $grid.hx[$x * ($grid.y_sz) + $y]
+    };
+}
+
+macro_rules! chye {
+    ($grid:ident, $x:expr, $y:expr) => {
+        $grid.hx[$x * ($grid.y_sz) + $y]
+    };
+}
+
+macro_rules! ez {
+    ($grid:ident, $x:expr, $y:expr) => {
+        $grid.hx[$x * ($grid.y_sz) + $y]
+    };
+}
+
+macro_rules! ceze {
+    ($grid:ident, $x:expr, $y:expr) => {
+        $grid.hx[$x * ($grid.y_sz) + $y]
+    };
+}
+
+macro_rules! cezh {
+    ($grid:ident, $x:expr, $y:expr) => {
+        $grid.hx[$x * ($grid.y_sz) + $y]
     };
 }
 
@@ -88,9 +132,8 @@ impl Grid {
             for nn in 0..self.y_sz - 1 {
                 // hx(mm, nn) = chxh(mm, nn) * hx(mm, nn) - chxe(mm, nn)
                 // * (ez(mm, nn + 1) - ez(mm, nn))
-                dim!(self, hx, mm, nn) = dim!(self, chxh, mm, nn) * dim!(self, hx, mm, nn)
-                    - dim!(self, chxe, mm, nn)
-                        * (dim!(self, ez, mm, (nn + 1)) - dim!(self, ez, mm, nn));
+                hx!(self, mm, nn) = chxh!(self, mm, nn) * hx!(self, mm, nn)
+                    - chxe!(self, mm, nn) * (ez!(self, mm, (nn + 1)) - ez!(self, mm, nn));
             }
         }
 
@@ -98,9 +141,8 @@ impl Grid {
             for nn in 0..self.y_sz {
                 // hy(mm, nn) = chyh(mm, nn) * hy(mm, nn) + chye(mm, nn)
                 // * (ez((mm + 1), nn) - ez(mm, nn))
-                dim!(self, hy, mm, nn) = dim!(self, chyh, mm, nn) * dim!(self, hy, mm, nn)
-                    + dim!(self, chye, mm, nn)
-                        * (dim!(self, ez, (mm + 1), nn) - dim!(self, ez, mm, nn));
+                hy!(self, mm, nn) = chyh!(self, mm, nn) * hy!(self, mm, nn)
+                    + chye!(self, mm, nn) * (ez!(self, (mm + 1), nn) - ez!(self, mm, nn));
             }
         }
     }
@@ -126,11 +168,11 @@ impl Grid {
             for nn in 1..self.y_sz - 1 {
                 // ez(mm, nn) = ceze(mm, nn) * ez(mm, nn) + cezh(mm, nn)
                 // * ((hy(mm, nn) - hy((mm - 1), nn)) - (hx(mm, nn) - hx(mm, (nn - 1))))
-                dim!(self, ez, mm, nn) = dim!(self, ceze, mm, nn) * dim!(self, ez, mm, nn)
-                    + dim!(self, cezh, mm, nn)
-                        * (dim!(self, hy, mm, nn)
-                            - dim!(self, hy, (mm - 1), nn)
-                            - (dim!(self, hx, mm, nn) - dim!(self, hx, mm, (nn - 1))));
+                ez!(self, mm, nn) = ceze!(self, mm, nn) * ez!(self, mm, nn)
+                    + cezh!(self, mm, nn)
+                        * (hy!(self, mm, nn)
+                            - hy!(self, (mm - 1), nn)
+                            - (hx!(self, mm, nn) - hx!(self, mm, (nn - 1))));
             }
         }
     }
