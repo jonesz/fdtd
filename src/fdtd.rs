@@ -73,49 +73,49 @@ macro_rules! hx {
 
 macro_rules! chxh {
     ($grid:ident, $x:expr, $y:expr) => {
-        $grid.hx[$x * ($grid.y_sz - 1) + $y]
+        $grid.chxh[$x * ($grid.y_sz - 1) + $y]
     };
 }
 
 macro_rules! chxe {
     ($grid:ident, $x:expr, $y:expr) => {
-        $grid.hx[$x * ($grid.y_sz - 1) + $y]
+        $grid.chxe[$x * ($grid.y_sz - 1) + $y]
     };
 }
 
 macro_rules! hy {
     ($grid:ident, $x:expr, $y:expr) => {
-        $grid.hx[$x * ($grid.y_sz) + $y]
+        $grid.hy[$x * ($grid.y_sz) + $y]
     };
 }
 
 macro_rules! chyh {
     ($grid:ident, $x:expr, $y:expr) => {
-        $grid.hx[$x * ($grid.y_sz) + $y]
+        $grid.chyh[$x * ($grid.y_sz) + $y]
     };
 }
 
 macro_rules! chye {
     ($grid:ident, $x:expr, $y:expr) => {
-        $grid.hx[$x * ($grid.y_sz) + $y]
+        $grid.chye[$x * ($grid.y_sz) + $y]
     };
 }
 
 macro_rules! ez {
     ($grid:ident, $x:expr, $y:expr) => {
-        $grid.hx[$x * ($grid.y_sz) + $y]
+        $grid.ez[$x * ($grid.y_sz) + $y]
     };
 }
 
 macro_rules! ceze {
     ($grid:ident, $x:expr, $y:expr) => {
-        $grid.hx[$x * ($grid.y_sz) + $y]
+        $grid.ceze[$x * ($grid.y_sz) + $y]
     };
 }
 
 macro_rules! cezh {
     ($grid:ident, $x:expr, $y:expr) => {
-        $grid.hx[$x * ($grid.y_sz) + $y]
+        $grid.cezh[$x * ($grid.y_sz) + $y]
     };
 }
 
