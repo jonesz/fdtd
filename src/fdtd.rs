@@ -130,8 +130,8 @@ impl Grid {
     fn magnetic_2d(&mut self) {
         for mm in 0..self.x_sz {
             for nn in 0..self.y_sz - 1 {
-                // hx(mm, nn) = chxh(mm, nn) * hx(mm, nn) - chxe(mm, nn)
-                // * (ez(mm, nn + 1) - ez(mm, nn))
+                // hx(mm, nn) = chxh(mm, nn) * hx(mm, nn)
+                //  - chxe(mm, nn) * (ez(mm, nn + 1) - ez(mm, nn))
                 hx!(self, mm, nn) = chxh!(self, mm, nn) * hx!(self, mm, nn)
                     - chxe!(self, mm, nn) * (ez!(self, mm, (nn + 1)) - ez!(self, mm, nn));
             }
@@ -139,8 +139,8 @@ impl Grid {
 
         for mm in 0..self.x_sz - 1 {
             for nn in 0..self.y_sz {
-                // hy(mm, nn) = chyh(mm, nn) * hy(mm, nn) + chye(mm, nn)
-                // * (ez((mm + 1), nn) - ez(mm, nn))
+                // hy(mm, nn) = chyh(mm, nn) * hy(mm, nn)
+                //  + chye(mm, nn) * (ez((mm + 1), nn) - ez(mm, nn))
                 hy!(self, mm, nn) = chyh!(self, mm, nn) * hy!(self, mm, nn)
                     + chye!(self, mm, nn) * (ez!(self, (mm + 1), nn) - ez!(self, mm, nn));
             }
@@ -166,12 +166,12 @@ impl Grid {
     fn electric_2d(&mut self) {
         for mm in 1..self.x_sz - 1 {
             for nn in 1..self.y_sz - 1 {
-                // ez(mm, nn) = ceze(mm, nn) * ez(mm, nn) + cezh(mm, nn)
-                // * ((hy(mm, nn) - hy((mm - 1), nn)) - (hx(mm, nn) - hx(mm, (nn - 1))))
+                // ez(mm, nn) = ceze(mm, nn) * ez(mm, nn)
+                //  + cezh(mm, nn)* ((hy(mm, nn) - hy((mm - 1), nn)) -
+                //      (hx(mm, nn) - hx(mm, (nn - 1))))
                 ez!(self, mm, nn) = ceze!(self, mm, nn) * ez!(self, mm, nn)
                     + cezh!(self, mm, nn)
-                        * (hy!(self, mm, nn)
-                            - hy!(self, (mm - 1), nn)
+                        * ((hy!(self, mm, nn) - hy!(self, (mm - 1), nn))
                             - (hx!(self, mm, nn) - hx!(self, mm, (nn - 1))));
             }
         }
