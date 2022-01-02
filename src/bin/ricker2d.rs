@@ -4,8 +4,8 @@ use fdtd::fdtd::{FDTDSim, Grid};
 use fdtd::ricker;
 use fdtd::snapshot;
 
-const SIZE_X: usize = 100;
-const SIZE_Y: usize = 80;
+const SIZE_X: usize = 101;
+const SIZE_Y: usize = 81;
 
 // Must be greater than 0.0;
 const PPW: f64 = 20.0;
