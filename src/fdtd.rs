@@ -302,72 +302,57 @@ where
         chxe: Option<Vec<f64>>,
         cdtds: Option<f64>,
     ) -> Result<Self, error::FDTDError> {
-        let len = x_sz * y_sz;
         let cdtds = cdtds.unwrap_or(1.0 / (2.0f64.sqrt()));
 
         // Defaults.
-        let ez = ez.unwrap_or(vec_of_sz(len, 0.0));
-        let ceze = ceze.unwrap_or(vec_of_sz(len, 1.0));
-        let cezh = cezh.unwrap_or(vec_of_sz(len, cdtds * IMP0));
+        let hx = hx.unwrap_or(vec_of_sz(x_sz * (y_sz - 1), 0.0));
+        let chxh = chxh.unwrap_or(vec_of_sz(x_sz * (y_sz - 1), 1.0));
+        let chxe = chxe.unwrap_or(vec_of_sz(x_sz * (y_sz - 1), cdtds / IMP0));
 
-        let hy = hy.unwrap_or(vec_of_sz(len, 0.0));
-        let chyh = chyh.unwrap_or(vec_of_sz(len, 1.0));
-        let chye = chye.unwrap_or(vec_of_sz(len, 1.0 / IMP0));
+        let hy = hy.unwrap_or(vec_of_sz((x_sz - 1) * y_sz, 0.0));
+        let chyh = chyh.unwrap_or(vec_of_sz((x_sz - 1) * y_sz, 1.0));
+        let chye = chye.unwrap_or(vec_of_sz((x_sz - 1) * y_sz, 1.0 / IMP0));
 
-        let hx = hx.unwrap_or(vec_of_sz(len, 0.0));
-        let chxh = chxh.unwrap_or(vec_of_sz(len, 1.0));
-        let chxe = chxe.unwrap_or(vec_of_sz(len, cdtds / IMP0));
+        let ez = ez.unwrap_or(vec_of_sz(x_sz * y_sz, 0.0));
+        let ceze = ceze.unwrap_or(vec_of_sz(x_sz * y_sz, 1.0));
+        let cezh = cezh.unwrap_or(vec_of_sz(x_sz * y_sz, cdtds * IMP0));
 
-        // Assert that all passed vectors are the same size.
-        let all_sz = ez.len();
-        if ez.len() != all_sz
-            || ceze.len() != all_sz
-            || cezh.len() != all_sz
-            || hy.len() != all_sz
-            || chyh.len() != all_sz
-            || chye.len() != all_sz
-            || hx.len() != all_sz
-            || chxh.len() != all_sz
-            || chxe.len() != all_sz
-        {
-            Err(error::FDTDError::LengthMismatch)
-        } else {
-            let g = Grid {
-                x_sz,
-                y_sz,
+        let g = Grid {
+            x_sz,
+            y_sz,
 
-                z_sz: 0,
-                hx,
-                chxh,
-                chxe,
+            z_sz: 0,
+            hx,
+            chxh,
+            chxe,
 
-                hy,
-                chyh,
-                chye,
+            hy,
+            chyh,
+            chye,
 
-                hz: Vec::new(),
-                chzh: Vec::new(),
-                chze: Vec::new(),
-                ex: Vec::new(),
-                cexe: Vec::new(),
-                cexh: Vec::new(),
-                ey: Vec::new(),
-                ceye: Vec::new(),
-                ceyh: Vec::new(),
+            hz: Vec::new(),
+            chzh: Vec::new(),
+            chze: Vec::new(),
+            ex: Vec::new(),
+            cexe: Vec::new(),
+            cexh: Vec::new(),
+            ey: Vec::new(),
+            ceye: Vec::new(),
+            ceyh: Vec::new(),
 
-                ez,
-                ceze,
-                cezh,
-                cdtds,
-            };
-            Ok(FDTDSim {
-                g,
-                dimension: GridDimension::Two(Polarization::Magnetic),
-                post_magnetic: None,
-                post_electric: None,
-                time: 0,
-            })
-        }
+            ez,
+            ceze,
+            cezh,
+            cdtds,
+        };
+
+        Ok(FDTDSim {
+            g,
+            dimension: GridDimension::Two(Polarization::Magnetic),
+            post_magnetic: None,
+            post_electric: None,
+            time: 0,
+        })
     }
 
     pub fn set_post_magnetic(&mut self, f: Option<A>) {
