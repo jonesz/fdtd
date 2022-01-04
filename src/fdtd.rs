@@ -202,7 +202,7 @@ where
     A: FnMut(usize, &mut Grid), // post-magnetic update.
     B: FnMut(usize, &mut Grid), // post-electric update.
 {
-    g: Grid,
+    pub g: Grid,
     dimension: GridDimension,
 
     // TODO: There's multiple ways to do this: function pointers, closures,
