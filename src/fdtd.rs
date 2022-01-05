@@ -53,6 +53,21 @@ where
     time: usize,
 }
 
+impl<A, B> Default for FDTDSim<A, B>
+where
+    A: FnMut(usize, &mut Grid),
+    B: FnMut(usize, &mut Grid),
+{
+    fn default() -> Self {
+        FDTDSim {
+            dimension: GridDimension::default(),
+            post_magnetic: None,
+            post_electric: None,
+            time: 0,
+        }
+    }
+}
+
 // TODO: See above note in FDTDSim about A/B specification when we want NOP
 // functions.
 impl<A, B> FDTDSim<A, B>
@@ -60,6 +75,21 @@ where
     A: FnMut(usize, &mut Grid),
     B: FnMut(usize, &mut Grid),
 {
+    /// Create a new FDTDSimulation.
+    pub fn new(
+        dimension: Option<GridDimension>,
+        a: Option<A>,
+        b: Option<B>,
+        time: Option<usize>,
+    ) -> Self {
+        FDTDSim {
+            dimension: dimension.unwrap_or_default(),
+            post_magnetic: a,
+            post_electric: b,
+            time: time.unwrap_or(0),
+        }
+    }
+
     pub fn set_post_magnetic(&mut self, f: Option<A>) {
         self.post_magnetic = f;
     }
