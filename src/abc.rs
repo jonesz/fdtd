@@ -1,5 +1,5 @@
 // src/abc.rs
-use crate::fdtd::Grid;
+use crate::grid::Grid;
 
 // 1st order 1D advection ABC.
 pub fn advection_abc_1st_order(cezh: &[f64], chye: &[f64]) -> impl FnMut(usize, &mut Grid) {

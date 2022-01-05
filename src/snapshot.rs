@@ -1,5 +1,5 @@
 // src/snapshot.rs
-use crate::fdtd::Grid;
+use crate::grid::Grid;
 use std::fs;
 use std::io::prelude::*;
 use std::time::SystemTime;
