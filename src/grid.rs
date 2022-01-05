@@ -102,10 +102,26 @@ impl Grid {
     }
 
     /// Build a new 2D grid.
-    pub fn new_2d(x_sz: usize, y_sz: usize) -> Self {
+    pub fn new_2d(x_sz: usize, y_sz: usize, cdtds: Option<f64>) -> Self {
+        let len = x_sz * y_sz;
+        let cdtds = cdtds.unwrap_or(1.0 / 2.0f64.sqrt());
+
         Grid {
             x_sz,
             y_sz,
+
+            hx: Grid::build_vec(len, 0.0),
+            chxh: Grid::build_vec(len, 1.0),
+            chxe: Grid::build_vec(len, cdtds / IMP0),
+
+            hy: Grid::build_vec(len, 0.0),
+            chyh: Grid::build_vec(len, 1.0),
+            chye: Grid::build_vec(len, 1.0 / IMP0),
+
+            ez: Grid::build_vec(len, 0.0),
+            ceze: Grid::build_vec(len, 1.0),
+            cezh: Grid::build_vec(len, cdtds * IMP0),
+
             ..Default::default()
         }
     }
