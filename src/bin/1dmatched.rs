@@ -1,7 +1,8 @@
 // 1D FDTD simulation of a lossless dielectric region followed by a lossy
 // layer which matches the impedance of the dielectric. Rust port of
 // the 'Program 3.8'.
-use fdtd::fdtd::{FDTDSim, Grid, IMP0};
+use fdtd::fdtd::{FDTDSim, GridDimension};
+use fdtd::grid::{Grid, IMP0};
 use fdtd::snapshot;
 
 const SIZE: usize = 200;
@@ -76,25 +77,24 @@ fn main() {
         }
     };
 
+    let mut g = Grid::new_1d(SIZE);
+    g.ceze = ceze;
+    g.cezh = cezh;
+    g.chyh = chyh;
+    g.chye = chye;
+
     // Create the FDTDSim.
-    let mut fdtd_sim = match FDTDSim::new_1d(
-        SIZE,
+    let mut fdtd_sim = FDTDSim::new(
+        Some(GridDimension::One),
+        Some(post_magnetic),
+        Some(post_electric),
         None,
-        Some(ceze),
-        Some(cezh),
-        None,
-        Some(chyh),
-        Some(chye),
-        None,
-    ) {
-        Ok(e) => e,
-        Err(_) => panic!(),
-    };
+    );
 
     fdtd_sim.set_post_magnetic(Some(post_magnetic));
     fdtd_sim.set_post_electric(Some(post_electric));
 
     for _ in 0..450 {
-        fdtd_sim.step();
+        fdtd_sim.step(&mut g);
     }
 }
