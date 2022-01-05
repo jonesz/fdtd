@@ -1,6 +1,7 @@
 // src/ricker2d.rs
 // Rust port of 'Program 8.7'.
-use fdtd::fdtd::{FDTDSim, Grid};
+use fdtd::fdtd::{FDTDSim, GridDimension, Polarization};
+use fdtd::grid::Grid;
 use fdtd::ricker;
 use fdtd::snapshot;
 
@@ -31,28 +32,17 @@ fn main() {
         }
     };
 
-    let mut fdtd_sim = match FDTDSim::new_2d(
-        SIZE_X,
-        SIZE_Y,
-        None,
-        None,
-        None,
-        None,
-        None,
-        None,
-        None,
-        None,
-        None,
-        Some(cdtds),
-    ) {
-        Ok(e) => e,
-        Err(_) => panic!(),
-    };
+    let mut g = Grid::new_2d(SIZE_X, SIZE_Y, None);
 
-    fdtd_sim.set_post_magnetic(Some(post_magnetic));
-    fdtd_sim.set_post_electric(Some(post_electric));
+    // Create the FDTDSim.
+    let mut fdtd_sim = FDTDSim::new(
+        Some(GridDimension::Two(Polarization::Magnetic)),
+        Some(post_magnetic),
+        Some(post_electric),
+        None,
+    );
 
     for _ in 0..300 {
-        fdtd_sim.step();
+        fdtd_sim.step(&mut g);
     }
 }
