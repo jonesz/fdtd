@@ -7,7 +7,7 @@
 -- Advance the 1D magnetic field.
 entry hy_step_1d [n] (hy: [n]f64) (chyh: [n]f64) (chye: [n]f64) (ez: [n]f64): [n]f64 = 
   let tmp = map (\i -> chyh[i] * hy[i] + chye[i] * (ez[i + 1] - ez[i])) (0..<n-1) in
-  concat_to n tmp [hy[n]]
+  concat_to n tmp [hy[n-1]]
 
 -- Advance the 1D electric field.
 entry ez_step_1d [n] (ez: [n]f64) (cezh: [n]f64) (ceze: [n]f64) (hy: [n]f64): [n]f64 =

@@ -220,7 +220,7 @@ where
         g: &Grid,
         ctx: &mut FutharkContext,
     ) -> Result<FutharkArr1d, error::FDTDError> {
-        let dim = [1i64, g.x_sz as i64];
+        let dim = [g.x_sz as i64, 1i64];
         let hy = Array_f64_1d::from_vec(*ctx, &g.hy, &dim)?;
         let chyh = Array_f64_1d::from_vec(*ctx, &g.chyh, &dim)?;
         let chye = Array_f64_1d::from_vec(*ctx, &g.chye, &dim)?;

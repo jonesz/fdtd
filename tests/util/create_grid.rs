@@ -3,18 +3,18 @@ use fdtd::grid::Grid;
 use rand::{rngs::StdRng, RngCore, SeedableRng};
 
 /// Create a default 1D grid.
-fn default_1d_grid(sz: usize) -> Grid {
+pub fn default_1d_grid(sz: usize) -> Grid {
     Grid::new_1d(sz)
 }
 
 // TODO: Place a Gaussian pulse or something in here.
 /// Create a 1D grid populated with precomputed values.
-fn precomputed_1d_grid(sz: usize) -> Grid {
+pub fn precomputed_1d_grid(sz: usize) -> Grid {
     Grid::new_1d(sz)
 }
 
 /// Create a 1D grid populated with random values.
-fn random_1d_grid(sz: usize, seed: [u8; 32]) -> Grid {
+pub fn random_1d_grid(sz: usize, seed: [u8; 32]) -> Grid {
     let mut rng = StdRng::from_seed(seed);
     let mut g = Grid::new_1d(sz);
 
