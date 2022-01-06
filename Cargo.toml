@@ -10,3 +10,6 @@ serde = { version = "1.0.*", features = ["derive"] }
 serde_json = { version = "1.0.*" }
 crow = { version = "0.7.2" }
 fdtd-futhark = { path = "parallel/fdtd-futhark" }
+
+[dev-dependencies]
+rand = { version = "^0.8.4" }
