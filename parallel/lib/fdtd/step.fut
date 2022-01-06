@@ -5,20 +5,24 @@
 -- let concat_to_3d [m][n][p] = 
 
 -- Advance the 1D magnetic field.
-def hy_step_1d [n] (hy: [n]f64) (chyh: [n]f64) (chye: [n]f64) (ez: [n]f64): [n]f64 = 
+entry hy_step_1d [n] (hy: [n]f64) (chyh: [n]f64) (chye: [n]f64) (ez: [n]f64): [n]f64 = 
   let tmp = map (\i -> chyh[i] * hy[i] + chye[i] * (ez[i + 1] - ez[i])) (0..<n-1) in
   concat_to n tmp [hy[n]]
 
 -- Advance the 1D electric field.
-def ez_step_1d [n] (ez: [n]f64) (cezh: [n]f64) (ceze: [n]f64) (hy: [n]f64): [n]f64 =
+entry ez_step_1d [n] (ez: [n]f64) (cezh: [n]f64) (ceze: [n]f64) (hy: [n]f64): [n]f64 =
   let tmp = map (\i -> ceze[i] * ez[i] + cezh[i] * (hy[i] - hy[i - 1])) (1..<n) in
   concat_to n [ez[0]] tmp
 
 -- Step the simulation forward, without post-{magnetic/electric} functions.
-def step_1d [n] (hy: [n]f64) (chyh: [n]f64) (chye: [n]f64) (ez: [n]f64) (cezh: [n]f64) (ceze: [n]f64): ([n]f64, [n]f64) =
+entry step_1d [n] (hy: [n]f64) (chyh: [n]f64) (chye: [n]f64) (ez: [n]f64) (cezh: [n]f64) (ceze: [n]f64): ([n]f64, [n]f64) =
     let hy = hy_step_1d hy chyh chye ez in
     let ez = ez_step_1d ez cezh ceze hy in
     (hy, ez)
+
+entry step_multiple_1d [n] (steps: i64) (hy: [n]f64) (chyh: [n]f64) (chye: [n]f64) (ez: [n]f64) (cezh: [n]f64) (ceze: [n]f64): ([n]f64, [n]f64) =
+  loop (hy, ez) for i < steps do
+    step_1d hy chyh chye ez cezh ceze
 
 --
 -- 2D TM^Z
