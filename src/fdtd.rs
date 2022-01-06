@@ -1,8 +1,10 @@
 // src/fdtd.rs
 //! Referenced from "Understanding the Finite-Difference Time-Domain Method"
 //! by John. B Schneider; https://eecs.wsu.edu/~schneidj/ufdtd/ufdtd.pdf.
+use crate::error;
 use crate::grid::Grid;
 use crate::step;
+use fdtd_futhark::FutharkContext;
 
 /// TM^z or TE^z.
 #[derive(Copy, Clone)]
@@ -45,6 +47,8 @@ where
     B: FnMut(usize, &mut Grid), // post-electric update.
 {
     dimension: GridDimension,
+    backend: Backend,
+    backend_context: Option<FutharkContext>,
 
     // TODO: There's multiple ways to do this: function pointers, closures,
     // boxed closures, etc. What's the most performant/flexible?
@@ -61,6 +65,8 @@ where
     fn default() -> Self {
         FDTDSim {
             dimension: GridDimension::default(),
+            backend: Backend::default(),
+            backend_context: None,
             post_magnetic: None,
             post_electric: None,
             time: 0,
@@ -78,16 +84,25 @@ where
     /// Create a new FDTDSimulation.
     pub fn new(
         dimension: Option<GridDimension>,
+        backend: Option<Backend>,
         a: Option<A>,
         b: Option<B>,
         time: Option<usize>,
-    ) -> Self {
-        FDTDSim {
+    ) -> Result<Self, error::FDTDError> {
+        // If needed, build the appropriate context.
+        let context = match backend {
+            Some(Backend::Futhark) => Some(FutharkContext::new()?),
+            _ => None,
+        };
+
+        Ok(FDTDSim {
             dimension: dimension.unwrap_or_default(),
+            backend: backend.unwrap_or_default(),
+            backend_context: context,
             post_magnetic: a,
             post_electric: b,
             time: time.unwrap_or(0),
-        }
+        })
     }
 
     pub fn set_post_magnetic(&mut self, f: Option<A>) {

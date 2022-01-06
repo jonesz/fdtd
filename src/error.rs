@@ -4,8 +4,14 @@ use std::error;
 use std::fmt;
 
 #[derive(Debug)]
-enum FDTDError {
+pub enum FDTDError {
     FutharkError(Error),
+}
+
+impl From<Error> for FDTDError {
+    fn from(e: Error) -> Self {
+        FDTDError::FutharkError(e)
+    }
 }
 
 impl fmt::Display for FDTDError {

@@ -73,10 +73,12 @@ fn main() {
     // Create the FDTDSim.
     let mut fdtd_sim = FDTDSim::new(
         Some(GridDimension::One),
+        None,
         Some(post_magnetic),
         Some(post_electric),
         None,
-    );
+    )
+    .unwrap();
 
     for _ in 0..450 {
         fdtd_sim.step(&mut g);
