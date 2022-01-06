@@ -1,6 +1,7 @@
 // tests/create_grid.rs
 use fdtd::grid::Grid;
-use rand::{rngs::StdRng, RngCore, SeedableRng};
+use rand::thread_rng;
+use rand::Rng;
 
 /// Create a default 1D grid.
 pub fn default_1d_grid(sz: usize) -> Grid {
@@ -14,18 +15,18 @@ pub fn precomputed_1d_grid(sz: usize) -> Grid {
 }
 
 /// Create a 1D grid populated with random values.
-pub fn random_1d_grid(sz: usize, seed: [u8; 32]) -> Grid {
-    let mut rng = StdRng::from_seed(seed);
+pub fn random_1d_grid(sz: usize) -> Grid {
+    let mut rng = thread_rng();
     let mut g = Grid::new_1d(sz);
 
     for i in 0..sz {
-        // TODO: I don't think this produces NaN values?
-        g.hy[i] = rng.next_u32() as f64;
-        g.chyh[i] = rng.next_u32() as f64;
-        g.chye[i] = rng.next_u32() as f64;
-        g.ez[i] = rng.next_u32() as f64;
-        g.ceze[i] = rng.next_u32() as f64;
-        g.cezh[i] = rng.next_u32() as f64;
+        // TODO: Presumably this doesn't produce NaNs or Inf.
+        g.hy[i] = rng.gen_range(-10.0..10.0);
+        g.chyh[i] = rng.gen_range(-10.0..10.0);
+        g.chye[i] = rng.gen_range(-10.0..10.0);
+        g.ez[i] = rng.gen_range(-10.0..10.0);
+        g.ceze[i] = rng.gen_range(-10.0..10.0);
+        g.cezh[i] = rng.gen_range(-10.0..10.0);
     }
 
     g

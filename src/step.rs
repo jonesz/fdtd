@@ -83,7 +83,7 @@ pub fn magnetic_2d(g: &mut Grid) {
 }
 
 pub fn electric_1d(g: &mut Grid) {
-    for mm in 1..g.x_sz - 1 {
+    for mm in 1..g.x_sz {
         g.ez[mm] = g.ceze[mm] * g.ez[mm] + g.cezh[mm] * (g.hy[mm] - g.hy[mm - 1]);
     }
 }

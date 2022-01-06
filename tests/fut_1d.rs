@@ -7,6 +7,8 @@ use fdtd::grid::Grid;
 
 mod util;
 
+const SIZE: usize = 10;
+
 /// Return a simulation that *should* call step_single_futhark (we have an
 /// post_electric fn).
 fn setup_step_single_futhark(
@@ -91,10 +93,10 @@ fn setup_step_native(
 
 #[test]
 fn test_default_grid() {
-    let mut grid1 = util::create_grid::default_1d_grid(1000);
-    let mut grid2 = grid1.clone();
-    let mut grid3 = grid1.clone();
-    let mut grid4 = grid1.clone();
+    let mut grid1 = util::create_grid::default_1d_grid(SIZE);
+    let mut grid2 = util::create_grid::default_1d_grid(SIZE);
+    let mut grid3 = util::create_grid::default_1d_grid(SIZE);
+    let mut grid4 = util::create_grid::default_1d_grid(SIZE);
 
     let mut sim_single = setup_step_single_futhark().unwrap();
     let mut sim_split = setup_step_split_futhark().unwrap();
@@ -115,10 +117,10 @@ fn test_default_grid() {
 
 #[test]
 fn test_precomputed_grid() {
-    let mut grid1 = util::create_grid::precomputed_1d_grid(1000);
-    let mut grid2 = grid1.clone();
-    let mut grid3 = grid1.clone();
-    let mut grid4 = grid1.clone();
+    let mut grid1 = util::create_grid::precomputed_1d_grid(SIZE);
+    let mut grid2 = util::create_grid::precomputed_1d_grid(SIZE);
+    let mut grid3 = util::create_grid::precomputed_1d_grid(SIZE);
+    let mut grid4 = util::create_grid::precomputed_1d_grid(SIZE);
 
     let mut sim_mul = setup_step_mul_futhark().unwrap();
     let mut sim_single = setup_step_single_futhark().unwrap();
@@ -139,15 +141,14 @@ fn test_precomputed_grid() {
 
 #[test]
 fn test_random_grid() {
-    let seed: [u8; 32] = [
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0,
-    ];
-
-    let mut grid1 = util::create_grid::random_1d_grid(1000, seed);
+    let mut grid1 = util::create_grid::random_1d_grid(SIZE);
     let mut grid2 = grid1.clone();
     let mut grid3 = grid1.clone();
     let mut grid4 = grid1.clone();
+
+    assert_eq!(grid1.eq(&grid2), true);
+    assert_eq!(grid1.eq(&grid3), true);
+    assert_eq!(grid1.eq(&grid4), true);
 
     let mut sim_single = setup_step_single_futhark().unwrap();
     let mut sim_split = setup_step_split_futhark().unwrap();
@@ -160,8 +161,8 @@ fn test_random_grid() {
         assert_eq!(sim_mul.step(&mut grid3).is_ok(), true);
         assert_eq!(sim_native.step(&mut grid4).is_ok(), true);
 
-        assert_eq!(grid1.eq(&grid2), true);
-        assert_eq!(grid1.eq(&grid3), true);
-        assert_eq!(grid1.eq(&grid4), true);
+        assert_eq!(util::grid_eq::grid_eq(&grid1, &grid2), true);
+        assert_eq!(util::grid_eq::grid_eq(&grid1, &grid3), true);
+        assert_eq!(util::grid_eq::grid_eq(&grid1, &grid4), true);
     }
 }
