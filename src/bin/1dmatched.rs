@@ -97,6 +97,6 @@ fn main() {
     fdtd_sim.set_post_electric(Some(post_electric));
 
     for _ in 0..450 {
-        fdtd_sim.step(&mut g);
+        fdtd_sim.step(&mut g).unwrap();
     }
 }

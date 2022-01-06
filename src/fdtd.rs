@@ -4,7 +4,7 @@
 use crate::error;
 use crate::grid::Grid;
 use crate::step;
-use fdtd_futhark::FutharkContext;
+use fdtd_futhark::{Array_f64_1d, FutharkContext};
 
 /// TM^z or TE^z.
 #[derive(Copy, Clone)]
@@ -37,6 +37,41 @@ impl Default for Backend {
         Backend::Native
     }
 }
+
+// Convenience structs. TODO: Passing vectors to these seems extremely error
+// prone; perhaps encompass them in something akin to:
+// `
+//  enum SimVec {
+//      Hx(Vec<f64>),
+//      Hy(Vec<f64>),
+//      ...
+//  }
+//`
+// Force the programmer to do a tiny bit more work, but allow the compiler
+// to detect function parameter mismatches.
+
+// hy, chyh, chye, ez, cezh, ceze
+struct FutharkArr1d(
+    Array_f64_1d,
+    Array_f64_1d,
+    Array_f64_1d,
+    Array_f64_1d,
+    Array_f64_1d,
+    Array_f64_1d,
+);
+
+// hx, chxh, chxe, hy, chyh, chye, ez, cezh, ceze
+struct FutharkArr2d(
+    Array_f64_1d,
+    Array_f64_1d,
+    Array_f64_1d,
+    Array_f64_1d,
+    Array_f64_1d,
+    Array_f64_1d,
+    Array_f64_1d,
+    Array_f64_1d,
+    Array_f64_1d,
+);
 
 // TODO: Closures that fit type of A/B must be specified for compilation,
 // even if the function is a NOP. This requires the programmer to write a NOP
@@ -90,6 +125,9 @@ where
         time: Option<usize>,
     ) -> Result<Self, error::FDTDError> {
         // If needed, build the appropriate context.
+        // TODO: What's the cost of building a new context on each step call?
+        // We can avoid making 'step' functions mutable if we just build a new
+        // mutable futhark context.
         let context = match backend {
             Some(Backend::Futhark) => Some(FutharkContext::new()?),
             _ => None,
@@ -113,11 +151,170 @@ where
         self.post_electric = f;
     }
 
-    /// Perform a step within the simulation for a given grid.
-    // TODO: Handle the futhark backend!
-    pub fn step(&mut self, g: &mut Grid) {
-        self.time += 1;
+    /// Perform a single step for a given grid.
+    pub fn step(&mut self, g: &mut Grid) -> Result<(), error::FDTDError> {
+        self.step_mul(g, 1)
+    }
 
+    /// Perform multiple steps for a given grid.
+    pub fn step_mul(&mut self, g: &mut Grid, n: usize) -> Result<(), error::FDTDError> {
+        match self.backend {
+            Backend::Native => {
+                for _ in 0..n {
+                    self.step_native(g)?;
+                }
+
+                Ok(())
+            }
+
+            Backend::Futhark => {
+                // If we have post-{magnetic, electric}, we have to perform
+                // those with native code. If not, we can do 'n' number
+                // of steps and likely save on copying over the boundary.
+                // The code for this has to be explicit; I doubt the compiler
+                // can infer anything due to FFI.
+                match (&self.post_magnetic, &self.post_electric) {
+                    (None, None) => self.step_mul_futhark(g, n),
+
+                    (None, _some) => {
+                        for _ in 0..n {
+                            self.step_single_futhark(g)?;
+                        }
+
+                        Ok(())
+                    }
+
+                    (_some, _) => {
+                        for _ in 0..n {
+                            self.step_split_futhark(g)?;
+                        }
+
+                        Ok(())
+                    }
+                }
+            }
+        }
+    }
+
+    /// Build arrays needed for a 1D Futhark step.
+    // TODO: chyh, chye, cezh, ceze are likely static over the full run of
+    // the simulation. Hopefully, the compiler can detect this, but if not,
+    // build some sort of cache into FDTDSim?
+    fn build_1d_futhark_arr(
+        &mut self,
+        g: &Grid,
+        ctx: &mut FutharkContext,
+    ) -> Result<FutharkArr1d, error::FDTDError> {
+        let dim = [1i64, g.x_sz as i64];
+        let hy = Array_f64_1d::from_vec(*ctx, &g.hy, &dim)?;
+        let chyh = Array_f64_1d::from_vec(*ctx, &g.chyh, &dim)?;
+        let chye = Array_f64_1d::from_vec(*ctx, &g.chye, &dim)?;
+        let ez = Array_f64_1d::from_vec(*ctx, &g.ez, &dim)?;
+        let cezh = Array_f64_1d::from_vec(*ctx, &g.cezh, &dim)?;
+        let ceze = Array_f64_1d::from_vec(*ctx, &g.ceze, &dim)?;
+
+        Ok(FutharkArr1d(hy, chyh, chye, ez, cezh, ceze))
+    }
+
+    /// Build arrays needed for a 2D Futhark step.
+    // TODO: See the above note about caching.
+    fn build_2d_futhark_arr(
+        &mut self,
+        g: &Grid,
+        ctx: &mut FutharkContext,
+    ) -> Result<FutharkArr2d, error::FDTDError> {
+        panic!("Unimplemented!")
+    }
+
+    /// Perform a single futhark step for a given grid. Called when we only
+    /// have a post_electric fn to call.
+    fn step_single_futhark(&mut self, g: &mut Grid) -> Result<(), error::FDTDError> {
+        // TODO: Propagate an error upward? The FutharkContext should have
+        // been created on new.
+        let mut ctx = self.backend_context.expect("No FutharkContext!");
+
+        match self.dimension {
+            GridDimension::One => {
+                let arr = self.build_1d_futhark_arr(g, &mut ctx)?;
+                let result = ctx.step_1d(arr.0, arr.1, arr.2, arr.3, arr.4, arr.5)?;
+
+                // TODO: Update the Grid with 'Hy' and 'Ez'.
+            }
+            _ => panic!("Unimplemented!"),
+        }
+
+        self.time += 1;
+        Ok(())
+    }
+
+    /// Perform a single futhark step for a given grid. Called when we have
+    /// a post_magnetic fn to call.
+    fn step_split_futhark(&mut self, g: &mut Grid) -> Result<(), error::FDTDError> {
+        // TODO: Propagate an error upward? The FutharkContext should have
+        // been created on new.
+        let mut ctx = self.backend_context.expect("No FutharkContext!");
+
+        // Perform the magnetic step.
+        match self.dimension {
+            GridDimension::One => {
+                let arr = self.build_1d_futhark_arr(g, &mut ctx)?;
+                let result = ctx.hy_step_1d(arr.0, arr.1, arr.2, arr.3)?;
+
+                // TODO: Update Grid's representation of 'Hy'.
+            }
+            _ => panic!("Unimplemented!"),
+        }
+
+        // Perform the post-magnetic step.
+        match &mut self.post_magnetic {
+            Some(v) => v(self.time, g),
+            None => (),
+        }
+
+        // Perform the electric step.
+        match self.dimension {
+            GridDimension::One => {
+                let arr = self.build_1d_futhark_arr(g, &mut ctx)?;
+                let result = ctx.ez_step_1d(arr.3, arr.4, arr.5, arr.0)?;
+
+                // TODO: Update Grid's representation of 'Ez'.
+            }
+            _ => panic!("Unimplemented!"),
+        }
+
+        // Perform the post-electric step.
+        match &mut self.post_electric {
+            Some(v) => v(self.time, g),
+            None => (),
+        }
+
+        self.time += 1;
+        Ok(())
+    }
+
+    /// Perform multiple futhark steps for a given grid.
+    fn step_mul_futhark(&mut self, g: &mut Grid, n: usize) -> Result<(), error::FDTDError> {
+        // TODO: Propagate an error upward? The FutharkContext should have
+        // been created on new.
+        let mut ctx = self.backend_context.expect("No FutharkContext!");
+
+        match self.dimension {
+            GridDimension::One => {
+                let arr = self.build_1d_futhark_arr(g, &mut ctx)?;
+                let result =
+                    ctx.step_multiple_1d(n as i64, arr.0, arr.1, arr.2, arr.3, arr.4, arr.5)?;
+
+                // TODO: Update Grid's representation of 'Hy' and 'Ez'.
+            }
+            _ => panic!("Unimplemented!"),
+        }
+
+        self.time += n;
+        Ok(())
+    }
+
+    /// Perform a native step for a given grid.
+    fn step_native(&mut self, g: &mut Grid) -> Result<(), error::FDTDError> {
         match self.dimension {
             GridDimension::One => step::magnetic_1d(g),
             GridDimension::Two(Polarization::Magnetic) => step::magnetic_2d(g),
@@ -139,5 +336,8 @@ where
             Some(v) => v(self.time, g),
             None => (),
         }
+
+        self.time += 1;
+        Ok(())
     }
 }

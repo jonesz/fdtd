@@ -45,6 +45,6 @@ fn main() {
     .unwrap();
 
     for _ in 0..300 {
-        fdtd_sim.step(&mut g);
+        fdtd_sim.step(&mut g).unwrap();
     }
 }
