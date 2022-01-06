@@ -73,6 +73,21 @@ struct FutharkArr2d(
     Array_f64_1d,
 );
 
+/// Populate the vector 'v' with the values of the passed 1D Array 'arr'.
+fn arr1d_into_vec(v: &mut Vec<f64>, arr: Array_f64_1d) -> Result<(), error::FDTDError> {
+    // TODO: Is it safe to just access the underlying values? There's
+    // probably a performance hit here.
+    let arr_vec = arr.to_vec()?;
+
+    // TODO: Rather than copying, g.arr could just be aliased to the arr
+    // created above.
+    for i in 0..v.len() {
+        v[i] = arr_vec.0[i];
+    }
+
+    Ok(())
+}
+
 // TODO: Closures that fit type of A/B must be specified for compilation,
 // even if the function is a NOP. This requires the programmer to write a NOP
 // function then pass it; is this avoidable?
@@ -236,9 +251,11 @@ where
         match self.dimension {
             GridDimension::One => {
                 let arr = self.build_1d_futhark_arr(g, &mut ctx)?;
-                let result = ctx.step_1d(arr.0, arr.1, arr.2, arr.3, arr.4, arr.5)?;
+                let (hy_arr, ez_arr) = ctx.step_1d(arr.0, arr.1, arr.2, arr.3, arr.4, arr.5)?;
 
-                // TODO: Update the Grid with 'Hy' and 'Ez'.
+                // Update 'Hy' and 'Ez' within the grid.
+                arr1d_into_vec(&mut g.hy, hy_arr)?;
+                arr1d_into_vec(&mut g.ez, ez_arr)?;
             }
             _ => panic!("Unimplemented!"),
         }
@@ -258,9 +275,13 @@ where
         match self.dimension {
             GridDimension::One => {
                 let arr = self.build_1d_futhark_arr(g, &mut ctx)?;
-                let result = ctx.hy_step_1d(arr.0, arr.1, arr.2, arr.3)?;
+                let hy_arr = ctx.hy_step_1d(arr.0, arr.1, arr.2, arr.3)?;
 
-                // TODO: Update Grid's representation of 'Hy'.
+                // Update 'Hy' within the grid.
+                // TODO: We can pass the result of this operation to the below
+                // 'ez_step_1d' and copy all at once for a likely small
+                // performance bump.
+                arr1d_into_vec(&mut g.hy, hy_arr)?;
             }
             _ => panic!("Unimplemented!"),
         }
@@ -275,9 +296,10 @@ where
         match self.dimension {
             GridDimension::One => {
                 let arr = self.build_1d_futhark_arr(g, &mut ctx)?;
-                let result = ctx.ez_step_1d(arr.3, arr.4, arr.5, arr.0)?;
+                let ez_arr = ctx.ez_step_1d(arr.3, arr.4, arr.5, arr.0)?;
 
-                // TODO: Update Grid's representation of 'Ez'.
+                // Update 'Ez' within the grid.
+                arr1d_into_vec(&mut g.ez, ez_arr)?;
             }
             _ => panic!("Unimplemented!"),
         }
@@ -301,10 +323,12 @@ where
         match self.dimension {
             GridDimension::One => {
                 let arr = self.build_1d_futhark_arr(g, &mut ctx)?;
-                let result =
+                let (hy_arr, ez_arr) =
                     ctx.step_multiple_1d(n as i64, arr.0, arr.1, arr.2, arr.3, arr.4, arr.5)?;
 
-                // TODO: Update Grid's representation of 'Hy' and 'Ez'.
+                // Update 'Hy' and 'Ez' within the grid.
+                arr1d_into_vec(&mut g.hy, hy_arr)?;
+                arr1d_into_vec(&mut g.ez, ez_arr)?;
             }
             _ => panic!("Unimplemented!"),
         }
