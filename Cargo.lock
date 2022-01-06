@@ -333,8 +333,16 @@ name = "fdtd"
 version = "0.1.0"
 dependencies = [
  "crow",
+ "fdtd-futhark",
  "serde",
  "serde_json",
+]
+
+[[package]]
+name = "fdtd-futhark"
+version = "0.1.0"
+dependencies = [
+ "cc",
 ]
 
 [[package]]
