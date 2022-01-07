@@ -93,10 +93,10 @@ fn setup_step_native(
 
 #[test]
 fn test_default_grid() {
-    let mut grid1 = util::create_grid::default_1d_grid(SIZE);
-    let mut grid2 = util::create_grid::default_1d_grid(SIZE);
-    let mut grid3 = util::create_grid::default_1d_grid(SIZE);
-    let mut grid4 = util::create_grid::default_1d_grid(SIZE);
+    let mut grid1 = util::create_grid::default_grid(SIZE, None, None, GridDimension::One);
+    let mut grid2 = util::create_grid::default_grid(SIZE, None, None, GridDimension::One);
+    let mut grid3 = util::create_grid::default_grid(SIZE, None, None, GridDimension::One);
+    let mut grid4 = util::create_grid::default_grid(SIZE, None, None, GridDimension::One);
 
     let mut sim_single = setup_step_single_futhark().unwrap();
     let mut sim_split = setup_step_split_futhark().unwrap();
@@ -117,10 +117,10 @@ fn test_default_grid() {
 
 #[test]
 fn test_precomputed_grid() {
-    let mut grid1 = util::create_grid::precomputed_1d_grid(SIZE);
-    let mut grid2 = util::create_grid::precomputed_1d_grid(SIZE);
-    let mut grid3 = util::create_grid::precomputed_1d_grid(SIZE);
-    let mut grid4 = util::create_grid::precomputed_1d_grid(SIZE);
+    let mut grid1 = util::create_grid::precomputed_grid(SIZE, None, None, GridDimension::One);
+    let mut grid2 = util::create_grid::precomputed_grid(SIZE, None, None, GridDimension::One);
+    let mut grid3 = util::create_grid::precomputed_grid(SIZE, None, None, GridDimension::One);
+    let mut grid4 = util::create_grid::precomputed_grid(SIZE, None, None, GridDimension::One);
 
     let mut sim_mul = setup_step_mul_futhark().unwrap();
     let mut sim_single = setup_step_single_futhark().unwrap();
@@ -141,7 +141,7 @@ fn test_precomputed_grid() {
 
 #[test]
 fn test_random_grid() {
-    let mut grid1 = util::create_grid::random_1d_grid(SIZE);
+    let mut grid1 = util::create_grid::random_grid(SIZE, None, None, GridDimension::One);
     let mut grid2 = grid1.clone();
     let mut grid3 = grid1.clone();
     let mut grid4 = grid1.clone();
