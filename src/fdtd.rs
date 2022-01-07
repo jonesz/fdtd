@@ -322,16 +322,9 @@ where
             }
 
             GridDimension::Two(Polarization::Magnetic) => {
-                let arr1 = self.build_2d_futhark_arr(g, &mut ctx)?;
-                let arr2 = self.build_2d_futhark_arr(g, &mut ctx)?; // FIXME: see below.
-                                                                    // hx, chxh, chxe, ez.
-                let hx_arr = ctx.hx_step_2d(arr1.0, arr1.1, arr1.2, arr1.6)?;
-
-                // TODO: arr.6 is moved here; rather than producing two arr's,
-                // implement Clone for arr? Produce multiple 'Array_f64_2d' for
-                // the values we need? Use unsafe?
-                // hy, chyh, chye, ez.
-                let hy_arr = ctx.hy_step_2d(arr2.3, arr2.4, arr2.5, arr2.6)?;
+                let arr = self.build_2d_futhark_arr(g, &mut ctx)?;
+                let (hx_arr, hy_arr) =
+                    ctx.magnetic_step_2d(arr.0, arr.1, arr.2, arr.3, arr.4, arr.5, arr.6)?;
 
                 // Update 'Hx' and 'Hy' within the grid.
                 arr2d_into_vec(&mut g.hx, hx_arr)?;

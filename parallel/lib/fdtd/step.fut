@@ -67,6 +67,13 @@ entry ez_step_2d [x][y] (ez: [x][y]f64) (cezh: [x][y]f64) (ceze: [x][y]f64) (hy:
     (take y ez)
     tmp
 
+-- Advance a full magnetic step in the 2d field.
+entry magnetic_step_2d [x][y] (hx: [x][y]f64) (chxh: [x][y]f64) (chxe: [x][y]f64) (hy: [x][y]f64) (chyh: [x][y]f64) (chye: [x][y]f64) (ez: [x][y]f64):
+  ([x][y]f64, [x][y]f64) =
+    let hx = hx_step_2d hx chxh chxe ez in
+    let hy = hy_step_2d hy chyh chye ez in
+    (hx, hy)
+
 -- Step the simulation forward, without post-{magnetic/electric} functions.
 entry step_2d [x][y] (hx: [x][y]f64) (chxh: [x][y]f64) (chxe: [x][y]f64) (hy: [x][y]f64) (chyh: [x][y]f64)
                      (chye: [x][y]f64) (ez: [x][y]f64) (cezh: [x][y]f64) (ceze: [x][y]f64): ([x][y]f64, [x][y]f64, [x][y]f64) = 
@@ -88,14 +95,21 @@ entry step_multiple_2d [x][y] (steps: i64) (hx: [x][y]f64) (chxh: [x][y]f64) (ch
 -- Hx(m, n, p) = Chxh(m, n, p) * Hx(m, n, p) +
 --  Chxe(m, n, p) * ((Ey(m, n, p + 1) - Ey(m, n, p)) -
 --                   (Ez(m, n + 1, p) - Ez(m, n, p)))
--- def hx_step_3d (hx: []f64) (chxh: []f64) (chxe: []f64)
---               (ey: []f64) (ez: []f64): []f64 =
+-- entry hx_step_3d [x][y][z] (hx: [x][y][z]f64) (chxh: [x][y][z]f64) (chxe: [x][y][z]f64) (ey: [x][y][z]f64) (ez: [x][y][z]f64): [x][y][z]f64 =
+-- TODO: Concatenation!
+-- map (\m -> 
+--    map (\n -> 
+--      map (\p -> chxh[m, n, p] * hx[m, n, p] + chxe[m, n, p]
+--        * ((ey[m, n, p + 1] - ey[m, n, p]) - (ez[m, n + 1, p] - ez[m, n, p))) 
+--        (0..<p-1))
+--      (0..<n-1))
+--    (0..<m)
 
 -- Hy(m, n, p) = Chyh(m, n, p) * Hy(m, n, p) +
 --  Chye(m, n, p) * ((Ez(m + 1, n, p) - Ez(m, n, p)) -
---                   (Ex(m, n, p + 0) - Ex(m, n, p)))
--- def hy_step_3d (hy: []f64) (chyh: []f64) (chye: []f64)
---                (ez: []f64) (ex: []f64): []f64 =
+--                   (Ex(m, n, p + 1) - Ex(m, n, p)))
+-- entry hy_step_3d [x][y][z] (hy: [x][y][z]f64) (chyh: [x][y][z]f64) (chye: [x][y][z]f64) (ez: [x][y][z]f64) (ex: [x][y][z]f64): [x][y][z]f64 =
+-- TODO: Concatenation!
 
 -- Hz(m, n, p) = Chzh(m, n, p) * Hz(m, n, p) +
 --  Chze(m, n, p) * ((Ex(m, n + 1, p) - Ex(m, n, p)) -
