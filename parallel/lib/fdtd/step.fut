@@ -56,7 +56,7 @@ entry hy_step_2d [x][y] (hy: [x][y]f64) (chyh: [x][y]f64) (chye: [x][y]f64) (ez:
 -- Advance the Ez portion of the 2d magnetic field.
 -- ez(mm, nn) = ceze(mm, nn) * ez(mm, nn) + cezh(mm, nn) * ((hy(mm, nn) 
 --    - hy((mm - 1), nn)) - (hx(mm, nn) - hx(mm, nn - 1)))
-entry ez_step_2d [x][y] (ez: [x][y]f64) (ceze: [x][y]f64) (cezh: [x][y]f64) (hy: [x][y]f64) (hx: [x][y]f64): [x][y]f64 =
+entry ez_step_2d [x][y] (ez: [x][y]f64) (cezh: [x][y]f64) (ceze: [x][y]f64) (hy: [x][y]f64) (hx: [x][y]f64): [x][y]f64 =
   -- Concat the beginning of ez within both the inner and outer arrays:
   --  [[1, 2, 3]] -> [[a, b, c, d], [1, 2, 3, 4]]
   let tmp = map (\m ->
@@ -69,7 +69,7 @@ entry ez_step_2d [x][y] (ez: [x][y]f64) (ceze: [x][y]f64) (cezh: [x][y]f64) (hy:
 
 -- Step the simulation forward, without post-{magnetic/electric} functions.
 entry step_2d [x][y] (hx: [x][y]f64) (chxh: [x][y]f64) (chxe: [x][y]f64) (hy: [x][y]f64) (chyh: [x][y]f64)
-                     (chye: [x][y]f64) (ez: [x][y]f64) (ceze: [x][y]f64) (cezh: [x][y]f64): ([x][y]f64, [x][y]f64, [x][y]f64) = 
+                     (chye: [x][y]f64) (ez: [x][y]f64) (cezh: [x][y]f64) (ceze: [x][y]f64): ([x][y]f64, [x][y]f64, [x][y]f64) = 
   let hx = hx_step_2d hx chxh chxe ez in
   let hy = hy_step_2d hy chyh chye ez in
   let ez = ez_step_2d ez ceze cezh hy hx in

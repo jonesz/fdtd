@@ -4,7 +4,7 @@
 use crate::error;
 use crate::grid::Grid;
 use crate::step;
-use fdtd_futhark::{Array_f64_1d, FutharkContext};
+use fdtd_futhark::{Array_f64_1d, Array_f64_2d, FutharkContext};
 
 /// TM^z or TE^z.
 #[derive(Copy, Clone)]
@@ -60,17 +60,17 @@ struct FutharkArr1d(
     Array_f64_1d,
 );
 
-// hx, chxh, chxe, hy, chyh, chye, ez, cezh, ceze
+// hx, chxh, chxe, hy, chyh, chye, ez, ceze, cezh
 struct FutharkArr2d(
-    Array_f64_1d,
-    Array_f64_1d,
-    Array_f64_1d,
-    Array_f64_1d,
-    Array_f64_1d,
-    Array_f64_1d,
-    Array_f64_1d,
-    Array_f64_1d,
-    Array_f64_1d,
+    Array_f64_2d,
+    Array_f64_2d,
+    Array_f64_2d,
+    Array_f64_2d,
+    Array_f64_2d,
+    Array_f64_2d,
+    Array_f64_2d,
+    Array_f64_2d,
+    Array_f64_2d,
 );
 
 /// Populate the vector 'v' with the values of the passed 1D Array 'arr'.
@@ -81,6 +81,20 @@ fn arr1d_into_vec(v: &mut Vec<f64>, arr: Array_f64_1d) -> Result<(), error::FDTD
 
     // TODO: Rather than copying, g.arr could just be aliased to the arr
     // created above.
+    for i in 0..v.len() {
+        v[i] = arr_vec.0[i];
+    }
+
+    Ok(())
+}
+
+/// Populate the vector 'v' with the values of the passed 2D Array 'arr'.
+fn arr2d_into_vec(v: &mut Vec<f64>, arr: Array_f64_2d) -> Result<(), error::FDTDError> {
+    let arr_vec = arr.to_vec()?;
+
+    // TODO: This is dependent on whether the multidimensional-arr is
+    // row/column oriented; the rust and futhark representation must align.
+    // Introduce a test?
     for i in 0..v.len() {
         v[i] = arr_vec.0[i];
     }
@@ -238,7 +252,18 @@ where
         g: &Grid,
         ctx: &mut FutharkContext,
     ) -> Result<FutharkArr2d, error::FDTDError> {
-        panic!("Unimplemented!")
+        let dim = [g.x_sz as i64, g.y_sz as i64];
+        let hx = Array_f64_2d::from_vec(*ctx, &g.hx, &dim)?;
+        let chxh = Array_f64_2d::from_vec(*ctx, &g.chxh, &dim)?;
+        let chxe = Array_f64_2d::from_vec(*ctx, &g.chxe, &dim)?;
+        let hy = Array_f64_2d::from_vec(*ctx, &g.hy, &dim)?;
+        let chyh = Array_f64_2d::from_vec(*ctx, &g.chyh, &dim)?;
+        let chye = Array_f64_2d::from_vec(*ctx, &g.chye, &dim)?;
+        let ez = Array_f64_2d::from_vec(*ctx, &g.ez, &dim)?;
+        let cezh = Array_f64_2d::from_vec(*ctx, &g.cezh, &dim)?;
+        let ceze = Array_f64_2d::from_vec(*ctx, &g.ceze, &dim)?;
+
+        Ok(FutharkArr2d(hx, chxh, chxe, hy, chyh, chye, ez, cezh, ceze))
     }
 
     /// Perform a single futhark step for a given grid. Called when we only
@@ -256,6 +281,18 @@ where
                 // Update 'Hy' and 'Ez' within the grid.
                 arr1d_into_vec(&mut g.hy, hy_arr)?;
                 arr1d_into_vec(&mut g.ez, ez_arr)?;
+            }
+
+            GridDimension::Two(Polarization::Magnetic) => {
+                let arr = self.build_2d_futhark_arr(g, &mut ctx)?;
+                let (hx_arr, hy_arr, ez_arr) = ctx.step_2d(
+                    arr.0, arr.1, arr.2, arr.3, arr.4, arr.5, arr.6, arr.7, arr.8,
+                )?;
+
+                // Update 'Hx', 'Hy', and 'Ez' within the grid.
+                arr2d_into_vec(&mut g.hx, hx_arr)?;
+                arr2d_into_vec(&mut g.hy, hy_arr)?;
+                arr2d_into_vec(&mut g.ez, ez_arr)?;
             }
             _ => panic!("Unimplemented!"),
         }
@@ -283,6 +320,23 @@ where
                 // performance bump.
                 arr1d_into_vec(&mut g.hy, hy_arr)?;
             }
+
+            GridDimension::Two(Polarization::Magnetic) => {
+                let arr1 = self.build_2d_futhark_arr(g, &mut ctx)?;
+                let arr2 = self.build_2d_futhark_arr(g, &mut ctx)?; // FIXME: see below.
+                                                                    // hx, chxh, chxe, ez.
+                let hx_arr = ctx.hx_step_2d(arr1.0, arr1.1, arr1.2, arr1.6)?;
+
+                // TODO: arr.6 is moved here; rather than producing two arr's,
+                // implement Clone for arr? Produce multiple 'Array_f64_2d' for
+                // the values we need? Use unsafe?
+                // hy, chyh, chye, ez.
+                let hy_arr = ctx.hy_step_2d(arr2.3, arr2.4, arr2.5, arr2.6)?;
+
+                // Update 'Hx' and 'Hy' within the grid.
+                arr2d_into_vec(&mut g.hx, hx_arr)?;
+                arr2d_into_vec(&mut g.hy, hy_arr)?;
+            }
             _ => panic!("Unimplemented!"),
         }
 
@@ -300,6 +354,15 @@ where
 
                 // Update 'Ez' within the grid.
                 arr1d_into_vec(&mut g.ez, ez_arr)?;
+            }
+
+            GridDimension::Two(Polarization::Magnetic) => {
+                let arr = self.build_2d_futhark_arr(g, &mut ctx)?;
+                // ez, cezh, ceze, hy, hx.
+                let ez_arr = ctx.ez_step_2d(arr.6, arr.7, arr.8, arr.0, arr.3)?;
+
+                // Update 'Ez' within the grid.
+                arr2d_into_vec(&mut g.ez, ez_arr)?;
             }
             _ => panic!("Unimplemented!"),
         }
@@ -329,6 +392,18 @@ where
                 // Update 'Hy' and 'Ez' within the grid.
                 arr1d_into_vec(&mut g.hy, hy_arr)?;
                 arr1d_into_vec(&mut g.ez, ez_arr)?;
+            }
+
+            GridDimension::Two(Polarization::Magnetic) => {
+                let arr = self.build_2d_futhark_arr(g, &mut ctx)?;
+                let (hx_arr, hy_arr, ez_arr) = ctx.step_multiple_2d(
+                    n as i64, arr.0, arr.1, arr.2, arr.3, arr.4, arr.5, arr.6, arr.7, arr.8,
+                )?;
+
+                // Update 'Hx', 'Hy', and 'Ez' within the grid.
+                arr2d_into_vec(&mut g.hx, hx_arr)?;
+                arr2d_into_vec(&mut g.hy, hy_arr)?;
+                arr2d_into_vec(&mut g.ez, ez_arr)?;
             }
             _ => panic!("Unimplemented!"),
         }
