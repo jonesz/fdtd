@@ -1,21 +1,22 @@
 // src/step.rs
 use crate::grid::Grid;
 
+// TODO: Can macros be nested?
 macro_rules! hx {
     ($grid:ident, $x:expr, $y:expr) => {
-        $grid.hx[$x * ($grid.y_sz - 1) + $y]
+        $grid.hx[$x * ($grid.y_sz) + $y]
     };
 }
 
 macro_rules! chxh {
     ($grid:ident, $x:expr, $y:expr) => {
-        $grid.chxh[$x * ($grid.y_sz - 1) + $y]
+        $grid.chxh[$x * ($grid.y_sz) + $y]
     };
 }
 
 macro_rules! chxe {
     ($grid:ident, $x:expr, $y:expr) => {
-        $grid.chxe[$x * ($grid.y_sz - 1) + $y]
+        $grid.chxe[$x * ($grid.y_sz) + $y]
     };
 }
 
