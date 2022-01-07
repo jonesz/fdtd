@@ -1,18 +1,17 @@
 -- step.fut
 -- a step in the electric/magnetic direction.
 
--- let concat_to_2d [m][n] = 
--- let concat_to_3d [m][n][p] = 
-
 -- Advance the 1D magnetic field.
 entry hy_step_1d [n] (hy: [n]f64) (chyh: [n]f64) (chye: [n]f64) (ez: [n]f64): [n]f64 = 
-  let tmp = map (\i -> chyh[i] * hy[i] + chye[i] * (ez[i + 1] - ez[i])) (0..<n-1) in
-  concat_to n tmp [hy[n-1]]
+  concat_to n
+    (map (\i -> chyh[i] * hy[i] + chye[i] * (ez[i + 1] - ez[i])) (0..<n-1)) 
+    [hy[n-1]]
 
 -- Advance the 1D electric field.
 entry ez_step_1d [n] (ez: [n]f64) (cezh: [n]f64) (ceze: [n]f64) (hy: [n]f64): [n]f64 =
-  let tmp = map (\i -> ceze[i] * ez[i] + cezh[i] * (hy[i] - hy[i - 1])) (1..<n) in
-  concat_to n [ez[0]] tmp
+  concat_to n 
+    [ez[0]] 
+    (map (\i -> ceze[i] * ez[i] + cezh[i] * (hy[i] - hy[i - 1])) (1..<n))
 
 -- Step the simulation forward, without post-{magnetic/electric} functions.
 entry step_1d [n] (hy: [n]f64) (chyh: [n]f64) (chye: [n]f64) (ez: [n]f64) (cezh: [n]f64) (ceze: [n]f64): ([n]f64, [n]f64) =
@@ -20,6 +19,7 @@ entry step_1d [n] (hy: [n]f64) (chyh: [n]f64) (chye: [n]f64) (ez: [n]f64) (cezh:
     let ez = ez_step_1d ez cezh ceze hy in
     (hy, ez)
 
+-- Step the simulation forward 'steps' times.
 entry step_multiple_1d [n] (steps: i64) (hy: [n]f64) (chyh: [n]f64) (chye: [n]f64) (ez: [n]f64) (cezh: [n]f64) (ceze: [n]f64): ([n]f64, [n]f64) =
   loop (hy, ez) for i < steps do
     step_1d hy chyh chye ez cezh ceze
@@ -30,30 +30,56 @@ entry step_multiple_1d [n] (steps: i64) (hy: [n]f64) (chyh: [n]f64) (chye: [n]f6
 
 -- Advance the Hx portion of the 2d magnetic field.
 -- hx(mm, nn) = chxh(mm, nn) * hx(mm, nn) - chxe(mm, nn) * (ez(mm, nn + 1) - ez(mm, nn))
--- def hx_step_2d [x][y] (hx: [x][y]f64) (chxh: [x][y]f64) (chxe: [x][y]f64) (ez: [x][y]f64): [x][y]f64 =
---    let tmp = map2 (\m n -> chxh[m][n] * hx[m][n] - chxe[m][n] * (ez[m][n + 1] - ez[m][n])) (0..x) (0..y-1) in
+entry hx_step_2d [x][y] (hx: [x][y]f64) (chxh: [x][y]f64) (chxe: [x][y]f64) (ez: [x][y]f64): [x][y]f64 =
+  -- Concat within the inner array: 
+  --  [[a, b, c], [1, 2, 3]] -> [[a, b, c, d], [1, 2, 3, 4]].
+  map (\m -> 
+    let tmp = map (\n -> chxh[m, n] * hx[m, n] - chxe[m, n] 
+      * (ez[m, n + 1] - ez[m, n]))
+    (0..<y-1) in
+    concat_to y tmp [hx[m, y-1]]) 
+  (0..<x)
  
 -- Advance the Hy portion of the 2d magnetic field.
 -- hy(mm, nn) = chyh(mm, nn) * hy(mm, nn) + chye(mm, nn) * (ez(mm + 1, nn) - ez(mm, nn))
--- def hy_step_2d [x][y] (hy: [x][y]f64) (chyh: [x][y]f64) (chye: [x][y]f64) (ez: [x][y]f64): [x][y]f64 =
---  let tmp = map2 (\m n -> chyh[m][n] * hy[m][n] + chye[m][n] * (ez[m + 1][n] - ez[m][n])) (0..x-1) (0..y) in
-
+entry hy_step_2d [x][y] (hy: [x][y]f64) (chyh: [x][y]f64) (chye: [x][y]f64) (ez: [x][y]f64): [x][y]f64 =
+  -- Concat the outer array:
+  --  [[a, b, c, d]] -> [[a, b, c, d], [1, 2, 3, 4]].
+  let tmp = map (\m -> 
+    map (\n -> 
+      chyh[m, n] * hy[m, n] + chye[m, n] * (ez[m + 1, n] - ez[m, n]))
+    (0..<y)) 
+  (0..<x-1) in
+  concat_to x tmp
+    (take ((x-1) * y) hy)
 
 -- Advance the Ez portion of the 2d magnetic field.
 -- ez(mm, nn) = ceze(mm, nn) * ez(mm, nn) + cezh(mm, nn) * ((hy(mm, nn) 
 --    - hy((mm - 1), nn)) - (hx(mm, nn) - hx(mm, nn - 1)))
--- def ez_step_2d [x][y] (ez: [x][y]f64) (ceze: [x][y]f64) (cezh: [x][y]f64) (hy: [x][y]f64) (hx: [x][y]f64): [x][y]f64 =
--- let tmp = map2 (\m n -> ceze[m][n] * ez[m][n] + cezh[m][n] 
--- * ((hy[m][n] - hy[m-1][n]) - (hx[m][n] - hx[m][n-1]))) (1..m) (1..n)
+entry ez_step_2d [x][y] (ez: [x][y]f64) (ceze: [x][y]f64) (cezh: [x][y]f64) (hy: [x][y]f64) (hx: [x][y]f64): [x][y]f64 =
+  -- Concat the beginning of ez within both the inner and outer arrays:
+  --  [[1, 2, 3]] -> [[a, b, c, d], [1, 2, 3, 4]]
+  let tmp = map (\m ->
+    let a = map (\n -> ceze[m, n] * ez[m, n] + cezh[m, n] * ((hy[m, n] - hy[m-1, n]) - (hx[m, n] - hx[m, n-1]))) (1..<y) in
+    concat_to y [ez[m, 0]] a)
+    (1..<x) in
+  concat_to x 
+    (take y ez)
+    tmp
 
 -- Step the simulation forward, without post-{magnetic/electric} functions.
--- def step_2d [x][y] (hx: [x][y]f64) (chxh: [x][y]f64) (chxe: [x][y]f64) (hy: [x][y]f64) (chyh: [x][y]f64)
---                    (chye: [x][y]f64) (ez: [x][y]f64) (ceze: [x][y]f64) (cezh: [x][y]): 
---                    ([x][y]f64, [x][y]f64, [x][y]f64) = 
--- let hx = hx_step_2d hx chxh cxhe ez in
--- let hy = hy_step_2d hy chyh chye ez in
--- let ez = ez_step_2d ez ceze cezh hy hx in
--- (hx, hy, ez)
+entry step_2d [x][y] (hx: [x][y]f64) (chxh: [x][y]f64) (chxe: [x][y]f64) (hy: [x][y]f64) (chyh: [x][y]f64)
+                     (chye: [x][y]f64) (ez: [x][y]f64) (ceze: [x][y]f64) (cezh: [x][y]f64): ([x][y]f64, [x][y]f64, [x][y]f64) = 
+  let hx = hx_step_2d hx chxh chxe ez in
+  let hy = hy_step_2d hy chyh chye ez in
+  let ez = ez_step_2d ez ceze cezh hy hx in
+  (hx, hy, ez)
+
+-- Step the simulation forward 'steps' times.
+entry step_multiple_2d [x][y] (steps: i64) (hx: [x][y]f64) (chxh: [x][y]f64) (chxe: [x][y]f64) (hy: [x][y]f64) (chyh: [x][y]f64)
+                              (chye: [x][y]f64) (ez: [x][y]f64) (ceze: [x][y]f64) (cezh: [x][y]f64): ([x][y]f64, [x][y]f64, [x][y]f64) =
+  loop (hx, hy, ez) for i < steps do
+    step_2d hx chxh chxe hy chyh chye ez ceze cezh
 
 --
 -- 3D
