@@ -4,7 +4,7 @@
 use crate::error;
 use crate::grid::Grid;
 use crate::step;
-use fdtd_futhark::{Array_f64_1d, Array_f64_2d, FutharkContext};
+use fdtd_futhark::{Array_f64_1d, Array_f64_2d, Array_f64_3d, FutharkContext};
 
 /// TM^z or TE^z.
 #[derive(Copy, Clone)]
@@ -73,6 +73,29 @@ struct FutharkArr2d(
     Array_f64_2d,
 );
 
+// hx chxh chxe hy chyh chye hz chzh chze
+//  ex cexe cexh ey ceye ceyh ez ceze cezh
+struct FutharkArr3d(
+    Array_f64_3d,
+    Array_f64_3d,
+    Array_f64_3d,
+    Array_f64_3d,
+    Array_f64_3d,
+    Array_f64_3d,
+    Array_f64_3d,
+    Array_f64_3d,
+    Array_f64_3d,
+    Array_f64_3d,
+    Array_f64_3d,
+    Array_f64_3d,
+    Array_f64_3d,
+    Array_f64_3d,
+    Array_f64_3d,
+    Array_f64_3d,
+    Array_f64_3d,
+    Array_f64_3d,
+);
+
 /// Populate the vector 'v' with the values of the passed 1D Array 'arr'.
 fn arr1d_into_vec(v: &mut Vec<f64>, arr: Array_f64_1d) -> Result<(), error::FDTDError> {
     // TODO: Is it safe to just access the underlying values? There's
@@ -90,6 +113,20 @@ fn arr1d_into_vec(v: &mut Vec<f64>, arr: Array_f64_1d) -> Result<(), error::FDTD
 
 /// Populate the vector 'v' with the values of the passed 2D Array 'arr'.
 fn arr2d_into_vec(v: &mut Vec<f64>, arr: Array_f64_2d) -> Result<(), error::FDTDError> {
+    let arr_vec = arr.to_vec()?;
+
+    // TODO: This is dependent on whether the multidimensional-arr is
+    // row/column oriented; the rust and futhark representation must align.
+    // Introduce a test?
+    for i in 0..v.len() {
+        v[i] = arr_vec.0[i];
+    }
+
+    Ok(())
+}
+
+/// Populate the vector 'v' with the values of the passed 3D Array 'arr'.
+fn arr3d_into_vec(v: &mut Vec<f64>, arr: Array_f64_3d) -> Result<(), error::FDTDError> {
     let arr_vec = arr.to_vec()?;
 
     // TODO: This is dependent on whether the multidimensional-arr is
@@ -266,6 +303,39 @@ where
         Ok(FutharkArr2d(hx, chxh, chxe, hy, chyh, chye, ez, cezh, ceze))
     }
 
+    /// Build arrays needed for a 3D Futhark step.
+    // TODO: See the above note about caching.
+    fn build_3d_futhark_arr(
+        &mut self,
+        g: &Grid,
+        ctx: &mut FutharkContext,
+    ) -> Result<FutharkArr3d, error::FDTDError> {
+        let dim = [g.x_sz as i64, g.y_sz as i64, g.z_sz as i64];
+        let hx = Array_f64_3d::from_vec(*ctx, &g.hx, &dim)?;
+        let chxh = Array_f64_3d::from_vec(*ctx, &g.chxh, &dim)?;
+        let chxe = Array_f64_3d::from_vec(*ctx, &g.chxe, &dim)?;
+        let hy = Array_f64_3d::from_vec(*ctx, &g.hy, &dim)?;
+        let chyh = Array_f64_3d::from_vec(*ctx, &g.chyh, &dim)?;
+        let chye = Array_f64_3d::from_vec(*ctx, &g.chye, &dim)?;
+        let hz = Array_f64_3d::from_vec(*ctx, &g.hz, &dim)?;
+        let chzh = Array_f64_3d::from_vec(*ctx, &g.chzh, &dim)?;
+        let chze = Array_f64_3d::from_vec(*ctx, &g.chze, &dim)?;
+        let ex = Array_f64_3d::from_vec(*ctx, &g.ex, &dim)?;
+        let cexh = Array_f64_3d::from_vec(*ctx, &g.cexh, &dim)?;
+        let cexe = Array_f64_3d::from_vec(*ctx, &g.cexe, &dim)?;
+        let ey = Array_f64_3d::from_vec(*ctx, &g.ey, &dim)?;
+        let ceyh = Array_f64_3d::from_vec(*ctx, &g.ceyh, &dim)?;
+        let ceye = Array_f64_3d::from_vec(*ctx, &g.ceye, &dim)?;
+        let ez = Array_f64_3d::from_vec(*ctx, &g.ez, &dim)?;
+        let cezh = Array_f64_3d::from_vec(*ctx, &g.cezh, &dim)?;
+        let ceze = Array_f64_3d::from_vec(*ctx, &g.ceze, &dim)?;
+
+        Ok(FutharkArr3d(
+            hx, chxh, chxe, hy, chyh, chye, hz, chzh, chze, ex, cexh, cexe, ey, ceyh, ceye, ez,
+            cezh, ceze,
+        ))
+    }
+
     /// Perform a single futhark step for a given grid. Called when we only
     /// have a post_electric fn to call.
     fn step_single_futhark(&mut self, g: &mut Grid) -> Result<(), error::FDTDError> {
@@ -294,6 +364,23 @@ where
                 arr2d_into_vec(&mut g.hy, hy_arr)?;
                 arr2d_into_vec(&mut g.ez, ez_arr)?;
             }
+
+            GridDimension::Three => {
+                let arr = self.build_3d_futhark_arr(g, &mut ctx)?;
+                let (hx_arr, hy_arr, hz_arr, ex_arr, ey_arr, ez_arr) = ctx.step_3d(
+                    arr.0, arr.1, arr.2, arr.3, arr.4, arr.5, arr.6, arr.7, arr.8, arr.9, arr.11,
+                    arr.12, arr.13, arr.14, arr.15, arr.16, arr.17, arr.18,
+                )?;
+
+                // Update 'Hx', 'Hy', 'Hz', 'Ex', 'Ey', and 'Ez' within the grid.
+                arr3d_into_vec(&mut g.hx, hx_arr)?;
+                arr3d_into_vec(&mut g.hy, hy_arr)?;
+                arr3d_into_vec(&mut g.hz, hz_arr)?;
+                arr3d_into_vec(&mut g.ex, ex_arr)?;
+                arr3d_into_vec(&mut g.ey, ey_arr)?;
+                arr3d_into_vec(&mut g.ez, ez_arr)?;
+            }
+
             _ => panic!("Unimplemented!"),
         }
 
@@ -330,6 +417,19 @@ where
                 arr2d_into_vec(&mut g.hx, hx_arr)?;
                 arr2d_into_vec(&mut g.hy, hy_arr)?;
             }
+
+            GridDimension::Three => {
+                let arr = self.build_3d_futhark_arr(g, &mut ctx)?;
+                let (hx_arr, hy_arr, hz_arr) = ctx.magnetic_step_3d(
+                    arr.0, arr.1, arr.2, arr.3, arr.4, arr.5, arr.6, arr.7, arr.8, arr.9, arr.12,
+                    arr.15,
+                )?;
+
+                // Update the 'Hx', 'Hy', and 'Hz' within the grid.
+                arr3d_into_vec(&mut g.hx, hx_arr)?;
+                arr3d_into_vec(&mut g.hy, hy_arr)?;
+                arr3d_into_vec(&mut g.hz, hz_arr)?;
+            }
             _ => panic!("Unimplemented!"),
         }
 
@@ -356,6 +456,16 @@ where
 
                 // Update 'Ez' within the grid.
                 arr2d_into_vec(&mut g.ez, ez_arr)?;
+            }
+
+            GridDimension::Three => {
+                let arr = self.build_3d_futhark_arr(g, &mut ctx)?;
+                let (ez_arr, ey_arr, ez_arr) = ctx.electric_step_3d();
+
+                // Update the 'Ez', 'Ey', and 'Ez' within the grid.
+                arr3d_into_vec(&mut g.ex, ex_arr)?;
+                arr3d_into_vec(&mut g.ey, ey_arr)?;
+                arr3d_into_vec(&mut g.ez, ez_arr)?;
             }
             _ => panic!("Unimplemented!"),
         }
@@ -398,6 +508,20 @@ where
                 arr2d_into_vec(&mut g.hy, hy_arr)?;
                 arr2d_into_vec(&mut g.ez, ez_arr)?;
             }
+
+            GridDimension::Three => {
+                let arr = self.build_3d_futhark_arr(g, &mut ctx)?;
+                let (hx_arr, hy_arr, hz_arr, ex_arr, ey_arr, ez_arr) =
+                    ctx.step_multiple_3d(n as i64)?;
+
+                // Update 'Hx', 'Hy', 'Hz', 'Ex', 'Ey', and 'Ez' within the grid.
+                arr3d_into_vec(&mut g.hx, hx_arr)?;
+                arr3d_into_vec(&mut g.hy, hy_arr)?;
+                arr3d_into_vec(&mut g.hz, hz_arr)?;
+                arr3d_into_vec(&mut g.ex, ex_arr)?;
+                arr3d_into_vec(&mut g.ey, ey_arr)?;
+                arr3d_into_vec(&mut g.ez, ez_arr)?;
+            }
             _ => panic!("Unimplemented!"),
         }
 
@@ -410,6 +534,7 @@ where
         match self.dimension {
             GridDimension::One => step::magnetic_1d(g),
             GridDimension::Two(Polarization::Magnetic) => step::magnetic_2d(g),
+            GridDimension::Three => step::magnetic_3d(g),
             _ => panic!("Unimplemented!"),
         };
 
@@ -421,6 +546,7 @@ where
         match self.dimension {
             GridDimension::One => step::electric_1d(g),
             GridDimension::Two(Polarization::Magnetic) => step::electric_2d(g),
+            GridDimension::Three => step::electric_3d(g),
             _ => panic!("Unimplemented!"),
         };
 
