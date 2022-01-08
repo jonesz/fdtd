@@ -1,5 +1,5 @@
 -- step.fut
--- a step in the electric/magnetic direction.
+-- Functions to advance an FDTD field.
 
 -- Advance the 1D magnetic field.
 entry hy_step_1d [n] (hy: [n]f64) (chyh: [n]f64) (chye: [n]f64) (ez: [n]f64): [n]f64 = 
@@ -30,7 +30,7 @@ entry step_multiple_1d [n] (steps: i64) (hy: [n]f64) (chyh: [n]f64) (chye: [n]f6
 
 -- Advance the Hx portion of the 2d magnetic field.
 -- hx(mm, nn) = chxh(mm, nn) * hx(mm, nn) - chxe(mm, nn) * (ez(mm, nn + 1) - ez(mm, nn))
-entry hx_step_2d [x][y] (hx: [x][y]f64) (chxh: [x][y]f64) (chxe: [x][y]f64) (ez: [x][y]f64): [x][y]f64 =
+def hx_step_2d [x][y] (hx: [x][y]f64) (chxh: [x][y]f64) (chxe: [x][y]f64) (ez: [x][y]f64): [x][y]f64 =
   -- Concat within the inner array: 
   --  [[a, b, c], [1, 2, 3]] -> [[a, b, c, d], [1, 2, 3, 4]].
   map (\m -> 
@@ -42,7 +42,7 @@ entry hx_step_2d [x][y] (hx: [x][y]f64) (chxh: [x][y]f64) (chxe: [x][y]f64) (ez:
  
 -- Advance the Hy portion of the 2d magnetic field.
 -- hy(mm, nn) = chyh(mm, nn) * hy(mm, nn) + chye(mm, nn) * (ez(mm + 1, nn) - ez(mm, nn))
-entry hy_step_2d [x][y] (hy: [x][y]f64) (chyh: [x][y]f64) (chye: [x][y]f64) (ez: [x][y]f64): [x][y]f64 =
+def hy_step_2d [x][y] (hy: [x][y]f64) (chyh: [x][y]f64) (chye: [x][y]f64) (ez: [x][y]f64): [x][y]f64 =
   -- Concat the outer array:
   --  [[a, b, c, d]] -> [[a, b, c, d], [1, 2, 3, 4]].
   let tmp = map (\m -> 
@@ -92,46 +92,134 @@ entry step_multiple_2d [x][y] (steps: i64) (hx: [x][y]f64) (chxh: [x][y]f64) (ch
 -- 3D
 --
 
--- Hx(m, n, p) = Chxh(m, n, p) * Hx(m, n, p) +
---  Chxe(m, n, p) * ((Ey(m, n, p + 1) - Ey(m, n, p)) -
---                   (Ez(m, n + 1, p) - Ez(m, n, p)))
--- entry hx_step_3d [x][y][z] (hx: [x][y][z]f64) (chxh: [x][y][z]f64) (chxe: [x][y][z]f64) (ey: [x][y][z]f64) (ez: [x][y][z]f64): [x][y][z]f64 =
+-- Advance the Hx portion of the 3D magnetic field.
+-- hx(m, n, p) = chxh(m, n, p) * hx(m, n, p) +
+--  chxe(m, n, p) * ((ey(m, n, p + 1) - ey(m, n, p)) -
+--                   (ez(m, n + 1, p) - ez(m, n, p)))
+def hx_step_3d [x][y][z] (hx: [x][y][z]f64) (chxh: [x][y][z]f64) (chxe: [x][y][z]f64) (ey: [x][y][z]f64) (ez: [x][y][z]f64): [x][y][z]f64 =
 -- TODO: Concatenation!
--- map (\m -> 
---    map (\n -> 
---      map (\p -> chxh[m, n, p] * hx[m, n, p] + chxe[m, n, p]
---        * ((ey[m, n, p + 1] - ey[m, n, p]) - (ez[m, n + 1, p] - ez[m, n, p))) 
---        (0..<p-1))
---      (0..<n-1))
---    (0..<m)
+  map (\m -> 
+    map (\n -> 
+      map (\p -> chxh[m, n, p] * hx[m, n, p] + chxe[m, n, p]
+        * ((ey[m, n, p + 1] - ey[m, n, p]) - (ez[m, n + 1, p] - ez[m, n, p))) 
+        (0..<p-1))
+      (0..<n-1))
+    (0..<m)
 
--- Hy(m, n, p) = Chyh(m, n, p) * Hy(m, n, p) +
---  Chye(m, n, p) * ((Ez(m + 1, n, p) - Ez(m, n, p)) -
---                   (Ex(m, n, p + 1) - Ex(m, n, p)))
--- entry hy_step_3d [x][y][z] (hy: [x][y][z]f64) (chyh: [x][y][z]f64) (chye: [x][y][z]f64) (ez: [x][y][z]f64) (ex: [x][y][z]f64): [x][y][z]f64 =
+-- Advance the Hy portion of the 3D magnetic field.
+-- hy(m, n, p) = chyh(m, n, p) * hy(m, n, p) +
+--  chye(m, n, p) * ((ez(m + 1, n, p) - ez(m, n, p)) -
+--                   (ex(m, n, p + 1) - ex(m, n, p)))
+def hy_step_3d [x][y][z] (hy: [x][y][z]f64) (chyh: [x][y][z]f64) (chye: [x][y][z]f64) (ez: [x][y][z]f64) (ex: [x][y][z]f64): [x][y][z]f64 =
 -- TODO: Concatenation!
+  map (\m ->
+    map (\n ->
+      map (\p -> chyh[m, n, p] * hy[m, n, p] + chye[m, n, p]
+        * ((ez[m + 1, n, p] - ez[m, n, p]) - (ex[m, n, p + 1] - ez[m, n, p])))
+        (0..<p-1))
+      (0..<n))
+    (0..<m-1)
 
--- Hz(m, n, p) = Chzh(m, n, p) * Hz(m, n, p) +
---  Chze(m, n, p) * ((Ex(m, n + 1, p) - Ex(m, n, p)) -
---                   (Ey(m + 1, n, p) - Ey(m, n, p)))
--- def hz_step_3d (hz: []f64) (chzh: []f64) (chze: []f64)
---                (ex: []f64) (ey: []f64): []f64 =
+-- Advance the Hz portion of the 3D magnetic field.
+-- hz(m, n, p) = chzh(m, n, p) * hz(m, n, p) +
+--  chze(m, n, p) * ((ex(m, n + 1, p) - ex(m, n, p)) -
+--                   (ey(m + 1, n, p) - ey(m, n, p)))
+def hz_step_3d [x][y][z] (hz: [x][y][z]f64) (chzh: [x][y][z]f64) (chze: [x][y][z]f64) (ex: [x][y][z]f64) (ey: [x][y][z]f64): [x[y][z]]f64 =
+  -- TODO: Concatenation!
+  map (\m ->
+    map (\n ->
+      map (\p -> chzh[m, n, p] * hz[m, n, p] + chze[m, n, p]
+        * ((ex[m, n + 1, p] - ex[m, n, p]) - (ey[m + 1, n, p] - ey[m, n, p])))
+        (0..<p))
+      (0..<n-1))
+    (0..<m-1)
 
--- Ex(m, n, p) = Cexe(m, n, p) * Ex(m, n, p) +
---  Cexh(m, n, p) * ((Hz(m, n, p) - Hz(m, n - 1, p)) -
---                   (Hy(m, n, p) - Hy(m, n, p - 1)))
--- def ex_step_3d (ex: []f64) (cexe: []f64) (cexh: []f64)
---               (hz: []f64, (hy: []f64): []f64 =
 
--- Ey(m, n, p) = Ceye(m, n, p) * Ey(m, n, p) +
---  Ceyh(m, n, p) * ((Hx(m, n, p) - Hx(m, n, p - 1)) -
---                   (Hz(m, n, p) - Hz(m - 1, n, p)))
--- def ey_step_3d (ey: []f64) (ceye: []f64) (ceyh: []f64)
---               (hx: []f64) (hz: []f64): []f64 =
+-- Advance a full magnetic step in the 3d field.
+entry magnetic_step_3d [x][y][z] (hx: [x][y][z]f64) (chxh: [x][y][z]f64) (chxe: [x][y][z]f64)
+                                 (hy: [x][y][z]f64) (chyh: [x][y][z]f64) (chye: [x][y][z]f64)
+                                 (hz: [x][y][z]f64) (chzh: [x][y][z]f64) (chze: [z][y][z]f64)
+                                 (ex: [x][y][z]f64) (ey: [x][y][z]f64) (ez: [x][y][z]: f64):
+                                 ([x][y][z]f64, [x][y][z]f64, [x][y][z]f64) =
+  let hx = hx_step_3d hx chxh chxe ey ez in
+  let hy = hy_step_3d hy chyh chye ez ex in
+  let hz = hz_step_3d hz chzh chze ex ey in
+  (hx, hy, hz)
 
--- Ez(m, n, p) = Ceze(m, n, p) * Ez(m, n, p) +
---  Cezh(m, n, p) * ((Hy(m, n, p) - Hy(m - 1, n, p)) -
---                   (Hx(m, n, p) - Hx(m, n - 1, p)))
--- def ez_step_3d (ez: []f64) (ceze: []f64) (cezh: []f64)
---             (hy: []f64) (hx: []f64): []f64 =
-  --
+-- Advance the Ex portion of the 3D electric field.
+-- ex(m, n, p) = cexe(m, n, p) * ex(m, n, p) +
+--  cexh(m, n, p) * ((hz(m, n, p) - hz(m, n - 1, p)) -
+--                   (hy(m, n, p) - hy(m, n, p - 1)))
+def ex_step_3d [x][y][z] (ex: [x][y][z]f64) (cexe: [x][y][z]f64) (cexh: [x][y][z]f64) (hz: [x][y][z]f64, (hy: [x][y][z]f64): [x][y][z]f64 =
+  -- TODO: Concatenation!
+  map (\m ->
+    map (\n ->
+      map (\p -> cexe[m, n, p] * ex[m, n, p] + cexh[m, n, p]
+        * ((hz[m, n, p] - hz[m, n - 1, p]) - (hy[m, n, p] - hy[m, n, p - 1])))
+        (1..<p))
+      (1..<n))
+    (0..<m)
+
+-- Advance the Ey portion of the 3D electric field.
+-- ey(m, n, p) = ceye(m, n, p) * ey(m, n, p) +
+--  ceyh(m, n, p) * ((hx(m, n, p) - hx(m, n, p - 1)) -
+--                   (hz(m, n, p) - hz(m - 1, n, p)))
+def ey_step_3d [x][y][z] (ey: [x][y][z]f64) (ceye: [x][y][z]f64) (ceyh: [x][y][z]f64) (hx: [x][y][z]f64) (hz: [x][y][z]f64): [x][y][z]f64 =
+  -- TODO: Concatenation!
+  map (\m ->
+    map (\n ->
+      map (\p -> ceye[m, n, p] * ey[m, n, p] + ceyh[m, n, p]
+        * ((hx[m, n, p] - hx[m, n, p - 1]) - (hz[m, n, p] - hz[m - 1, n, p])))
+        (1..<p))
+      (0..<n))
+    (1..<m)
+
+-- Advance the Ez portion of the 3D electric field.
+-- ez(m, n, p) = ceze(m, n, p) * ez(m, n, p) +
+--  cezh(m, n, p) * ((hy(m, n, p) - hy(m - 1, n, p)) -
+--                   (hx(m, n, p) - hx(m, n - 1, p)))
+def ez_step_3d [x][y][z] (ez: [x][y][z]f64) (ceze: [x][y][z]f64) (cezh: [x][y][z]f64) (hy: [x][y][z]f64) (hx: [x][y][z]f64): [x][y][z]f64 =
+  -- TODO: Concatenation!
+  map (\m ->
+    map (\n ->
+      map (\p -> ceze[m, n, p] * ez[m, n, p] + cezh[m, n, p]
+        * ((hy[m, n, p] - hy[m - 1, n, p]) - (hx[m, n, p] - hx[m, n - 1, p])))
+        (0..<p))
+      (1..<n))
+    (1..<m)
+
+-- Advance a full electric step in the 3d field.
+entry electric_step_3d [x][y][z] (ex: [x][y][z]f64) (cexe: [x][y][z]f64) (cexh: [x][y][z]f64)
+                                 (ey: [x][y][z]f64) (ceye: [x][y][z]f64) (ceyh: [x][y][z]f64)
+                                 (ez: [x][y][z]f64) (ceze: [x][y][z]f64) (cezh: [z][y][z]f64)
+                                 (hx: [x][y][z]f64) (hy: [x][y][z]f64) (hz: [x][y][z]f64):
+                                 ([x][y][z]f64, [x][y][z]f64, [x][y][z]f64) =
+  let ex = ex_step_3d hx chxh chxe ey ez in
+  let ey = ey_step_3d hy chyh chye ez ex in
+  let ez = ez_step_3d hz chzh chze ex ey in
+  (ex, ey, ez)
+
+-- Step the simulation foward, without post-{magnetic/electric} functions.
+entry step_3d [x][y][z] (hx: [x][y][z]f64) (chxh: [x][y][z]f64) (chxe: [x][y][z]f64)
+                        (hy: [x][y][z]f64) (chyh: [x][y][z]f64) (chye: [x][y][z]f64)
+                        (hz: [x][y][z]f64) (chzh: [x][y][z]f64) (chze: [z][y][z]f64)
+                        (ex: [x][y][z]f64) (cexe: [x][y][z]f64) (cexh: [x][y][z]f64)
+                        (ey: [x][y][z]f64) (ceye: [x][y][z]f64) (ceyh: [x][y][z]f64)
+                        (ez: [x][y][z]f64) (ceze: [x][y][z]f64) (cezh: [x][y][z]f64):
+                        ([x][y][z]f64, [x][y][z]f64, [x][y][z]f64) =
+  let (hx, hy, hz) = magnetic_step_3d hx chxh chxe hy chyh chye hz chzh chze ex ey ez in
+  let (ex, ey, ez) = magnetic_step_3d ex cexe cexh ey ceye ceyh ez ceze cezh hx hy hz in
+  (hx, hy, hz, ex, ey, ez)
+
+-- Step the simulation foward 'steps' times.
+entry step_multiple_3d [x][y][z] (steps: i64) 
+                        (hx: [x][y][z]f64) (chxh: [x][y][z]f64) (chxe: [x][y][z]f64)
+                        (hy: [x][y][z]f64) (chyh: [x][y][z]f64) (chye: [x][y][z]f64)
+                        (hz: [x][y][z]f64) (chzh: [x][y][z]f64) (chze: [z][y][z]f64)
+                        (ex: [x][y][z]f64) (cexe: [x][y][z]f64) (cexh: [x][y][z]f64)
+                        (ey: [x][y][z]f64) (ceye: [x][y][z]f64) (ceyh: [x][y][z]f64)
+                        (ez: [x][y][z]f64) (ceze: [x][y][z]f64) (cezh: [x][y][z]f64):
+                        ([x][y][z]f64, [x][y][z]f64, [x][y][z]f64) =
+  loop (hx, hy, hz, ex, ey, ez) for i < steps do
+    step_3d hx chxh chxe hy chyh chye hz chzh chze hz chzh chze
+      ex cexe cexh ey ceye ceyh ez ceze cezh
