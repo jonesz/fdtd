@@ -65,7 +65,7 @@ def hy_step_2d [x][y] (hy: [x][y]f64) (chyh: [x][y]f64) (chye: [x][y]f64)
 -- ez(m, n) = ceze(m, n) * ez(m, n) + cezh(m, n) 
 --              * ((hy(m, n) - hy((m - 1), n)) - (hx(m, n) - hx(m, n - 1)))
 entry ez_step_2d [x][y] (ez: [x][y]f64) (cezh: [x][y]f64) (ceze: [x][y]f64)
-                        (hy: [x][y]f64) (hx: [x][y]f64): [x][y]f64 =
+                        (hx: [x][y]f64) (hy: [x][y]f64): [x][y]f64 =
   -- Concat the beginning of ez within both the inner and outer arrays:
   --  [[1, 2, 3]] -> [[a, b, c, d], [1, 2, 3, 4]]
   let tmp = map (\m ->
@@ -90,17 +90,17 @@ entry step_2d [x][y] (hx: [x][y]f64) (chxh: [x][y]f64) (chxe: [x][y]f64)
                      ([x][y]f64, [x][y]f64, [x][y]f64) = 
   let hx = hx_step_2d hx chxh chxe ez in
   let hy = hy_step_2d hy chyh chye ez in
-  let ez = ez_step_2d ez ceze cezh hy hx in
+  let ez = ez_step_2d ez cezh ceze hx hy in
   (hx, hy, ez)
 
 -- Step the simulation forward 'steps' times.
 entry step_multiple_2d [x][y] (steps: i64)
                               (hx: [x][y]f64) (chxh: [x][y]f64) (chxe: [x][y]f64)
                               (hy: [x][y]f64) (chyh: [x][y]f64) (chye: [x][y]f64)
-                              (ez: [x][y]f64) (ceze: [x][y]f64) (cezh: [x][y]f64):
+                              (ez: [x][y]f64) (cezh: [x][y]f64) (ceze: [x][y]f64):
                               ([x][y]f64, [x][y]f64, [x][y]f64) =
   loop (hx, hy, ez) for i < steps do
-    step_2d hx chxh chxe hy chyh chye ez ceze cezh
+    step_2d hx chxh chxe hy chyh chye ez cezh ceze
 
 --
 -- 3D

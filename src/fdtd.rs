@@ -268,7 +268,7 @@ where
         g: &Grid,
         ctx: &mut FutharkContext,
     ) -> Result<FutharkArr1d, error::FDTDError> {
-        let dim = [g.x_sz as i64, 1i64];
+        let dim = [g.x_sz as i64];
         let hy = Array_f64_1d::from_vec(*ctx, &g.hy, &dim)?;
         let chyh = Array_f64_1d::from_vec(*ctx, &g.chyh, &dim)?;
         let chye = Array_f64_1d::from_vec(*ctx, &g.chye, &dim)?;
@@ -486,7 +486,7 @@ where
             GridDimension::Two(Polarization::Magnetic) => {
                 let arr = self.build_2d_futhark_arr(g, &mut ctx)?;
                 // ez, cezh, ceze, hy, hx.
-                let ez_arr = ctx.ez_step_2d(arr.ez, arr.cezh, arr.ceze, arr.hy, arr.hx)?;
+                let ez_arr = ctx.ez_step_2d(arr.ez, arr.cezh, arr.ceze, arr.hx, arr.hy)?;
 
                 // Update 'Ez' within the grid.
                 arr2d_into_vec(&mut g.ez, ez_arr)?;
@@ -540,7 +540,7 @@ where
                 let arr = self.build_2d_futhark_arr(g, &mut ctx)?;
                 let (hx_arr, hy_arr, ez_arr) = ctx.step_multiple_2d(
                     n as i64, arr.hx, arr.chxh, arr.chxe, arr.hy, arr.chyh, arr.chye, arr.ez,
-                    arr.ceze, arr.cezh,
+                    arr.cezh, arr.ceze,
                 )?;
 
                 // Update 'Hx', 'Hy', and 'Ez' within the grid.
