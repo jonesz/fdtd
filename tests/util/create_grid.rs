@@ -8,7 +8,7 @@ use rand::Rng;
 pub fn default_grid(
     x_sz: usize,
     y_sz: Option<usize>,
-    _z_sz: Option<usize>,
+    z_sz: Option<usize>,
     g: GridDimension,
 ) -> Grid {
     match g {
@@ -16,6 +16,12 @@ pub fn default_grid(
         GridDimension::Two(Polarization::Magnetic) => {
             Grid::new_2d(x_sz, y_sz.expect("Need 'y_sz' for 2 dimensions."), None)
         }
+        GridDimension::Three => Grid::new_3d(
+            x_sz,
+            y_sz.expect("Need 'y_sz' for 3 dimensions."),
+            z_sz.expect("Need 'z_sz' for 3 dimensions."),
+            None,
+        ),
         _ => panic!("Unimplemented!"),
     }
 }
@@ -25,7 +31,7 @@ pub fn default_grid(
 pub fn precomputed_grid(
     x_sz: usize,
     y_sz: Option<usize>,
-    _z_sz: Option<usize>,
+    z_sz: Option<usize>,
     g: GridDimension,
 ) -> Grid {
     match g {
@@ -33,6 +39,12 @@ pub fn precomputed_grid(
         GridDimension::Two(Polarization::Magnetic) => {
             Grid::new_2d(x_sz, y_sz.expect("Need 'y_sz' for 2 dimensions."), None)
         }
+        GridDimension::Three => Grid::new_3d(
+            x_sz,
+            y_sz.expect("Need 'y_sz' for 3 dimensions."),
+            z_sz.expect("Need 'z_sz' for 3 dimensions."),
+            None,
+        ),
         _ => panic!("Unimplemented!"),
     }
 }
@@ -47,9 +59,13 @@ pub fn random_grid(
     let mut rng = thread_rng();
     let mut g = match grid_type {
         GridDimension::One => Grid::new_1d(x_sz),
-        GridDimension::Two(Polarization::Magnetic) => Grid::new_2d(
+        GridDimension::Two(Polarization::Magnetic) => {
+            Grid::new_2d(x_sz, y_sz.expect("Need 'y_sz' for 2 dimensions."), None)
+        }
+        GridDimension::Three => Grid::new_3d(
             x_sz,
-            y_sz.expect("Need 'y_sz' for multiple dimensions."),
+            y_sz.expect("Need 'y_sz' for 3 dimensions."),
+            z_sz.expect("Need 'z_sz' for 3 dimensions."),
             None,
         ),
         _ => panic!("Unimplemented!"),

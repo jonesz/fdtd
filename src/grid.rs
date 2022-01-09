@@ -125,4 +125,42 @@ impl Grid {
             ..Default::default()
         }
     }
+
+    /// Build a new 3d grid.
+    pub fn new_3d(x_sz: usize, y_sz: usize, z_sz: usize, cdtds: Option<f64>) -> Self {
+        let len = x_sz * y_sz * z_sz;
+        let cdtds = cdtds.unwrap_or(1.0 / 3.0f64.sqrt());
+
+        Grid {
+            x_sz,
+            y_sz,
+            z_sz,
+
+            hx: Grid::build_vec(len, 0.0),
+            chxh: Grid::build_vec(len, 1.0),
+            chxe: Grid::build_vec(len, cdtds / IMP0),
+
+            hy: Grid::build_vec(len, 0.0),
+            chyh: Grid::build_vec(len, 1.0),
+            chye: Grid::build_vec(len, cdtds / IMP0),
+
+            hz: Grid::build_vec(len, 0.0),
+            chzh: Grid::build_vec(len, 1.0),
+            chze: Grid::build_vec(len, cdtds / IMP0),
+
+            ex: Grid::build_vec(len, 0.0),
+            cexe: Grid::build_vec(len, 1.0),
+            cexh: Grid::build_vec(len, cdtds * IMP0),
+
+            ey: Grid::build_vec(len, 0.0),
+            ceye: Grid::build_vec(len, 1.0),
+            ceyh: Grid::build_vec(len, cdtds * IMP0),
+
+            ez: Grid::build_vec(len, 0.0),
+            ceze: Grid::build_vec(len, 1.0),
+            cezh: Grid::build_vec(len, cdtds * IMP0),
+
+            cdtds,
+        }
+    }
 }

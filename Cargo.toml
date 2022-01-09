@@ -13,3 +13,9 @@ fdtd-futhark = { path = "parallel/fdtd-futhark" }
 
 [dev-dependencies]
 rand = { version = "^0.8.4" }
+
+[features]
+default = ["sequential_c"]
+sequential_c = []
+cuda = []
+opencl = []
