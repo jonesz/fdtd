@@ -59,7 +59,7 @@ def hy_step_2d [x][y] (hy: [x][y]f64) (chyh: [x][y]f64) (chye: [x][y]f64)
       chyh[m, n] * hy[m, n] + chye[m, n] * (ez[m + 1, n] - ez[m, n]))
     (0..<y)) 
   (0..<x-1) in
-  concat_to x tmp (take ((x-1) * y) hy)
+  concat_to x tmp [hy[x-1]]
 
 -- Advance the 'Ez' portion of the 2d magnetic field.
 -- ez(m, n) = ceze(m, n) * ez(m, n) + cezh(m, n) 
@@ -73,7 +73,7 @@ entry ez_step_2d [x][y] (ez: [x][y]f64) (cezh: [x][y]f64) (ceze: [x][y]f64)
       * ((hy[m, n] - hy[m-1, n]) - (hx[m, n] - hx[m, n-1]))) (1..<y) in
     concat_to y [ez[m, 0]] a)
     (1..<x) in
-  concat_to x (take y ez) tmp
+  concat_to x [ez[0]] tmp
 
 -- Advance a full magnetic step in the 2d field.
 entry magnetic_step_2d [x][y] (hx: [x][y]f64) (chxh: [x][y]f64) (chxe: [x][y]f64)
