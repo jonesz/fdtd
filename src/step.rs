@@ -264,8 +264,8 @@ pub fn electric_1d(g: &mut Grid) {
 
 // TM^Z
 pub fn electric_2d(g: &mut Grid) {
-    for mm in 1..g.x_sz - 1 {
-        for nn in 1..g.y_sz - 1 {
+    for mm in 1..g.x_sz {
+        for nn in 1..g.y_sz {
             // ez(mm, nn) = ceze(mm, nn) * ez(mm, nn)
             //  + cezh(mm, nn)* ((hy(mm, nn) - hy((mm - 1), nn)) -
             //      (hx(mm, nn) - hx(mm, (nn - 1))))
