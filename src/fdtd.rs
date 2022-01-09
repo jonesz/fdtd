@@ -50,49 +50,48 @@ impl Default for Backend {
 // Force the programmer to do a tiny bit more work, but allow the compiler
 // to detect function parameter mismatches.
 
-// hy, chyh, chye, ez, cezh, ceze
-struct FutharkArr1d(
-    Array_f64_1d,
-    Array_f64_1d,
-    Array_f64_1d,
-    Array_f64_1d,
-    Array_f64_1d,
-    Array_f64_1d,
-);
+struct FutharkArr1d {
+    hy: Array_f64_1d,
+    chyh: Array_f64_1d,
+    chye: Array_f64_1d,
+    ez: Array_f64_1d,
+    cezh: Array_f64_1d,
+    ceze: Array_f64_1d,
+}
 
 // hx, chxh, chxe, hy, chyh, chye, ez, ceze, cezh
-struct FutharkArr2d(
-    Array_f64_2d,
-    Array_f64_2d,
-    Array_f64_2d,
-    Array_f64_2d,
-    Array_f64_2d,
-    Array_f64_2d,
-    Array_f64_2d,
-    Array_f64_2d,
-    Array_f64_2d,
-);
+struct FutharkArr2d {
+    hx: Array_f64_2d,
+    chxh: Array_f64_2d,
+    chxe: Array_f64_2d,
+    hy: Array_f64_2d,
+    chyh: Array_f64_2d,
+    chye: Array_f64_2d,
+    ez: Array_f64_2d,
+    cezh: Array_f64_2d,
+    ceze: Array_f64_2d,
+}
 
-struct FutharkArr3d(
-    Array_f64_3d, // 0 hx
-    Array_f64_3d, // 1 chxh
-    Array_f64_3d, // 2 chxe
-    Array_f64_3d, // 3 hy
-    Array_f64_3d, // 4 chyh
-    Array_f64_3d, // 5 chye
-    Array_f64_3d, // 6 hz
-    Array_f64_3d, // 7 chzh
-    Array_f64_3d, // 8 chze
-    Array_f64_3d, // 9 ex
-    Array_f64_3d, // 10 cexe
-    Array_f64_3d, // 11 cexh
-    Array_f64_3d, // 12 ey
-    Array_f64_3d, // 13 ceye
-    Array_f64_3d, // 14 ceyh
-    Array_f64_3d, // 15 ez
-    Array_f64_3d, // 16 ceze
-    Array_f64_3d, // 17 cezh
-);
+struct FutharkArr3d {
+    hx: Array_f64_3d,
+    chxh: Array_f64_3d,
+    chxe: Array_f64_3d,
+    hy: Array_f64_3d,
+    chyh: Array_f64_3d,
+    chye: Array_f64_3d,
+    hz: Array_f64_3d,
+    chzh: Array_f64_3d,
+    chze: Array_f64_3d,
+    ex: Array_f64_3d,
+    cexh: Array_f64_3d,
+    cexe: Array_f64_3d,
+    ey: Array_f64_3d,
+    ceyh: Array_f64_3d,
+    ceye: Array_f64_3d,
+    ez: Array_f64_3d,
+    cezh: Array_f64_3d,
+    ceze: Array_f64_3d,
+}
 
 /// Populate the vector 'v' with the values of the passed 1D Array 'arr'.
 fn arr1d_into_vec(v: &mut Vec<f64>, arr: Array_f64_1d) -> Result<(), error::FDTDError> {
@@ -277,7 +276,14 @@ where
         let cezh = Array_f64_1d::from_vec(*ctx, &g.cezh, &dim)?;
         let ceze = Array_f64_1d::from_vec(*ctx, &g.ceze, &dim)?;
 
-        Ok(FutharkArr1d(hy, chyh, chye, ez, cezh, ceze))
+        Ok(FutharkArr1d {
+            hy,
+            chyh,
+            chye,
+            ez,
+            cezh,
+            ceze,
+        })
     }
 
     /// Build arrays needed for a 2D Futhark step.
@@ -298,7 +304,17 @@ where
         let cezh = Array_f64_2d::from_vec(*ctx, &g.cezh, &dim)?;
         let ceze = Array_f64_2d::from_vec(*ctx, &g.ceze, &dim)?;
 
-        Ok(FutharkArr2d(hx, chxh, chxe, hy, chyh, chye, ez, cezh, ceze))
+        Ok(FutharkArr2d {
+            hx,
+            chxh,
+            chxe,
+            hy,
+            chyh,
+            chye,
+            ez,
+            cezh,
+            ceze,
+        })
     }
 
     /// Build arrays needed for a 3D Futhark step.
@@ -328,10 +344,26 @@ where
         let cezh = Array_f64_3d::from_vec(*ctx, &g.cezh, &dim)?;
         let ceze = Array_f64_3d::from_vec(*ctx, &g.ceze, &dim)?;
 
-        Ok(FutharkArr3d(
-            hx, chxh, chxe, hy, chyh, chye, hz, chzh, chze, ex, cexh, cexe, ey, ceyh, ceye, ez,
-            cezh, ceze,
-        ))
+        Ok(FutharkArr3d {
+            hx,
+            chxh,
+            chxe,
+            hy,
+            chyh,
+            chye,
+            hz,
+            chzh,
+            chze,
+            ex,
+            cexh,
+            cexe,
+            ey,
+            ceyh,
+            ceye,
+            ez,
+            cezh,
+            ceze,
+        })
     }
 
     /// Perform a single futhark step for a given grid. Called when we only
@@ -344,7 +376,8 @@ where
         match self.dimension {
             GridDimension::One => {
                 let arr = self.build_1d_futhark_arr(g, &mut ctx)?;
-                let (hy_arr, ez_arr) = ctx.step_1d(arr.0, arr.1, arr.2, arr.3, arr.4, arr.5)?;
+                let (hy_arr, ez_arr) =
+                    ctx.step_1d(arr.hy, arr.chyh, arr.chye, arr.ez, arr.cezh, arr.ceze)?;
 
                 // Update 'Hy' and 'Ez' within the grid.
                 arr1d_into_vec(&mut g.hy, hy_arr)?;
@@ -354,7 +387,8 @@ where
             GridDimension::Two(Polarization::Magnetic) => {
                 let arr = self.build_2d_futhark_arr(g, &mut ctx)?;
                 let (hx_arr, hy_arr, ez_arr) = ctx.step_2d(
-                    arr.0, arr.1, arr.2, arr.3, arr.4, arr.5, arr.6, arr.7, arr.8,
+                    arr.hx, arr.chxh, arr.chxe, arr.hy, arr.chyh, arr.chye, arr.ez, arr.cezh,
+                    arr.ceze,
                 )?;
 
                 // Update 'Hx', 'Hy', and 'Ez' within the grid.
@@ -366,8 +400,9 @@ where
             GridDimension::Three => {
                 let arr = self.build_3d_futhark_arr(g, &mut ctx)?;
                 let (hx_arr, hy_arr, hz_arr, ex_arr, ey_arr, ez_arr) = ctx.step_3d(
-                    arr.0, arr.1, arr.2, arr.3, arr.4, arr.5, arr.6, arr.7, arr.8, arr.9, arr.10,
-                    arr.11, arr.12, arr.13, arr.14, arr.15, arr.16, arr.17,
+                    arr.hx, arr.chxh, arr.chxe, arr.hy, arr.chyh, arr.chye, arr.hz, arr.chzh,
+                    arr.chze, arr.ex, arr.cexe, arr.cexh, arr.ey, arr.ceye, arr.ceyh, arr.ez,
+                    arr.ceze, arr.cezh,
                 )?;
 
                 // Update 'Hx', 'Hy', 'Hz', 'Ex', 'Ey', and 'Ez' within the grid.
@@ -397,7 +432,7 @@ where
         match self.dimension {
             GridDimension::One => {
                 let arr = self.build_1d_futhark_arr(g, &mut ctx)?;
-                let hy_arr = ctx.hy_step_1d(arr.0, arr.1, arr.2, arr.3)?;
+                let hy_arr = ctx.hy_step_1d(arr.hy, arr.chyh, arr.chye, arr.ez)?;
 
                 // Update 'Hy' within the grid.
                 // TODO: We can pass the result of this operation to the below
@@ -408,8 +443,9 @@ where
 
             GridDimension::Two(Polarization::Magnetic) => {
                 let arr = self.build_2d_futhark_arr(g, &mut ctx)?;
-                let (hx_arr, hy_arr) =
-                    ctx.magnetic_step_2d(arr.0, arr.1, arr.2, arr.3, arr.4, arr.5, arr.6)?;
+                let (hx_arr, hy_arr) = ctx.magnetic_step_2d(
+                    arr.hx, arr.chxh, arr.chxe, arr.hy, arr.chyh, arr.chye, arr.ez,
+                )?;
 
                 // Update 'Hx' and 'Hy' within the grid.
                 arr2d_into_vec(&mut g.hx, hx_arr)?;
@@ -419,8 +455,8 @@ where
             GridDimension::Three => {
                 let arr = self.build_3d_futhark_arr(g, &mut ctx)?;
                 let (hx_arr, hy_arr, hz_arr) = ctx.magnetic_step_3d(
-                    arr.0, arr.1, arr.2, arr.3, arr.4, arr.5, arr.6, arr.7, arr.8, arr.9, arr.12,
-                    arr.15,
+                    arr.hx, arr.chxh, arr.chxe, arr.hy, arr.chyh, arr.chye, arr.hz, arr.chzh,
+                    arr.chze, arr.ex, arr.ey, arr.ez,
                 )?;
 
                 // Update the 'Hx', 'Hy', and 'Hz' within the grid.
@@ -441,7 +477,7 @@ where
         match self.dimension {
             GridDimension::One => {
                 let arr = self.build_1d_futhark_arr(g, &mut ctx)?;
-                let ez_arr = ctx.ez_step_1d(arr.3, arr.4, arr.5, arr.0)?;
+                let ez_arr = ctx.ez_step_1d(arr.ez, arr.cezh, arr.ceze, arr.hy)?;
 
                 // Update 'Ez' within the grid.
                 arr1d_into_vec(&mut g.ez, ez_arr)?;
@@ -450,7 +486,7 @@ where
             GridDimension::Two(Polarization::Magnetic) => {
                 let arr = self.build_2d_futhark_arr(g, &mut ctx)?;
                 // ez, cezh, ceze, hy, hx.
-                let ez_arr = ctx.ez_step_2d(arr.6, arr.7, arr.8, arr.0, arr.3)?;
+                let ez_arr = ctx.ez_step_2d(arr.ez, arr.cezh, arr.ceze, arr.hy, arr.hx)?;
 
                 // Update 'Ez' within the grid.
                 arr2d_into_vec(&mut g.ez, ez_arr)?;
@@ -460,8 +496,8 @@ where
                 let arr = self.build_3d_futhark_arr(g, &mut ctx)?;
                 // ex, cexe, cexh, ey, ceye, ceyh, ez, ceze, cezh, hx, hy, hz
                 let (ex_arr, ey_arr, ez_arr) = ctx.electric_step_3d(
-                    arr.9, arr.10, arr.11, arr.12, arr.13, arr.14, arr.15, arr.16, arr.17, arr.0,
-                    arr.3, arr.6,
+                    arr.ex, arr.cexe, arr.cexh, arr.ey, arr.ceye, arr.ceyh, arr.ez, arr.ceze,
+                    arr.cezh, arr.hx, arr.hy, arr.hz,
                 )?;
 
                 // Update the 'Ez', 'Ey', and 'Ez' within the grid.
@@ -491,8 +527,9 @@ where
         match self.dimension {
             GridDimension::One => {
                 let arr = self.build_1d_futhark_arr(g, &mut ctx)?;
-                let (hy_arr, ez_arr) =
-                    ctx.step_multiple_1d(n as i64, arr.0, arr.1, arr.2, arr.3, arr.4, arr.5)?;
+                let (hy_arr, ez_arr) = ctx.step_multiple_1d(
+                    n as i64, arr.hy, arr.chyh, arr.chye, arr.ez, arr.cezh, arr.ceze,
+                )?;
 
                 // Update 'Hy' and 'Ez' within the grid.
                 arr1d_into_vec(&mut g.hy, hy_arr)?;
@@ -502,7 +539,8 @@ where
             GridDimension::Two(Polarization::Magnetic) => {
                 let arr = self.build_2d_futhark_arr(g, &mut ctx)?;
                 let (hx_arr, hy_arr, ez_arr) = ctx.step_multiple_2d(
-                    n as i64, arr.0, arr.1, arr.2, arr.3, arr.4, arr.5, arr.6, arr.7, arr.8,
+                    n as i64, arr.hx, arr.chxh, arr.chxe, arr.hy, arr.chyh, arr.chye, arr.ez,
+                    arr.ceze, arr.cezh,
                 )?;
 
                 // Update 'Hx', 'Hy', and 'Ez' within the grid.
@@ -514,8 +552,9 @@ where
             GridDimension::Three => {
                 let arr = self.build_3d_futhark_arr(g, &mut ctx)?;
                 let (hx_arr, hy_arr, hz_arr, ex_arr, ey_arr, ez_arr) = ctx.step_multiple_3d(
-                    n as i64, arr.0, arr.1, arr.2, arr.3, arr.4, arr.5, arr.6, arr.7, arr.8, arr.9,
-                    arr.10, arr.11, arr.12, arr.13, arr.14, arr.15, arr.16, arr.17,
+                    n as i64, arr.hx, arr.chxh, arr.chxe, arr.hy, arr.chyh, arr.chye, arr.hz,
+                    arr.chzh, arr.chze, arr.ex, arr.cexe, arr.cexh, arr.ey, arr.ceye, arr.ceyh,
+                    arr.ez, arr.ceze, arr.cezh,
                 )?;
 
                 // Update 'Hx', 'Hy', 'Hz', 'Ex', 'Ey', and 'Ez' within the grid.
