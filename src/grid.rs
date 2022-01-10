@@ -4,7 +4,7 @@ use serde::Serialize;
 /// Characteristic impedance of free space.
 pub const IMP0: f64 = 377.0;
 
-#[derive(Serialize, Clone, PartialEq)]
+#[derive(Debug, Serialize, Clone, PartialEq)]
 pub struct Grid {
     // TODO: For 1d, 2d, etc. we don't need all of these vectors; at this
     // point, we allocate what ends up being a 0-length(?) vector on the heap.
