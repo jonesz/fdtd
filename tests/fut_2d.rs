@@ -7,8 +7,8 @@ use fdtd::grid::Grid;
 
 mod util;
 
-const SIZE_X: usize = 10;
-const SIZE_Y: usize = 10;
+const SIZE_X: usize = 5;
+const SIZE_Y: usize = 3;
 
 /// Return a simulation that *should* call step_single_futhark (we have an
 /// post_electric fn).
@@ -158,6 +158,7 @@ fn test_random_grid() {
         None,
         GridDimension::Two(Polarization::Magnetic),
     );
+
     let mut grid2 = grid1.clone();
     let mut grid3 = grid1.clone();
     let mut grid4 = grid1.clone();
@@ -165,6 +166,10 @@ fn test_random_grid() {
     assert_eq!(grid1.eq(&grid2), true);
     assert_eq!(grid1.eq(&grid3), true);
     assert_eq!(grid1.eq(&grid4), true);
+
+    assert_eq!(util::grid_eq::grid_eq(&grid1, &grid2), true);
+    assert_eq!(util::grid_eq::grid_eq(&grid1, &grid3), true);
+    assert_eq!(util::grid_eq::grid_eq(&grid1, &grid4), true);
 
     let mut sim_single = setup_step_single_futhark().unwrap();
     let mut sim_split = setup_step_split_futhark().unwrap();

@@ -32,7 +32,7 @@ pub fn grid_eq(a: &Grid, b: &Grid) -> bool {
         & veq!(a.hz, &b.hz)
         & veq!(a.chzh, &b.chzh)
         & veq!(a.chze, &b.chze)
-        & veq!(a.ex, &b.ez)
+        & veq!(a.ex, &b.ex)
         & veq!(a.cexe, &b.cexe)
         & veq!(a.cexh, &b.cexh)
         & veq!(a.ey, &b.ey)
