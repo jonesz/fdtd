@@ -401,8 +401,8 @@ where
                 let arr = self.build_3d_futhark_arr(g, &mut ctx)?;
                 let (hx_arr, hy_arr, hz_arr, ex_arr, ey_arr, ez_arr) = ctx.step_3d(
                     arr.hx, arr.chxh, arr.chxe, arr.hy, arr.chyh, arr.chye, arr.hz, arr.chzh,
-                    arr.chze, arr.ex, arr.cexe, arr.cexh, arr.ey, arr.ceye, arr.ceyh, arr.ez,
-                    arr.ceze, arr.cezh,
+                    arr.chze, arr.ex, arr.cexh, arr.cexe, arr.ey, arr.ceyh, arr.ceye, arr.ez,
+                    arr.cezh, arr.ceze,
                 )?;
 
                 // Update 'Hx', 'Hy', 'Hz', 'Ex', 'Ey', and 'Ez' within the grid.
@@ -496,8 +496,8 @@ where
                 let arr = self.build_3d_futhark_arr(g, &mut ctx)?;
                 // ex, cexe, cexh, ey, ceye, ceyh, ez, ceze, cezh, hx, hy, hz
                 let (ex_arr, ey_arr, ez_arr) = ctx.electric_step_3d(
-                    arr.ex, arr.cexe, arr.cexh, arr.ey, arr.ceye, arr.ceyh, arr.ez, arr.ceze,
-                    arr.cezh, arr.hx, arr.hy, arr.hz,
+                    arr.ex, arr.cexh, arr.cexe, arr.ey, arr.ceyh, arr.ceye, arr.ez, arr.cezh,
+                    arr.ceze, arr.hx, arr.hy, arr.hz,
                 )?;
 
                 // Update the 'Ez', 'Ey', and 'Ez' within the grid.
@@ -553,8 +553,8 @@ where
                 let arr = self.build_3d_futhark_arr(g, &mut ctx)?;
                 let (hx_arr, hy_arr, hz_arr, ex_arr, ey_arr, ez_arr) = ctx.step_multiple_3d(
                     n as i64, arr.hx, arr.chxh, arr.chxe, arr.hy, arr.chyh, arr.chye, arr.hz,
-                    arr.chzh, arr.chze, arr.ex, arr.cexe, arr.cexh, arr.ey, arr.ceye, arr.ceyh,
-                    arr.ez, arr.ceze, arr.cezh,
+                    arr.chzh, arr.chze, arr.ex, arr.cexh, arr.cexe, arr.ey, arr.ceyh, arr.ceye,
+                    arr.ez, arr.cezh, arr.ceze,
                 )?;
 
                 // Update 'Hx', 'Hy', 'Hz', 'Ex', 'Ey', and 'Ez' within the grid.
