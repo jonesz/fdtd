@@ -1,0 +1,10 @@
+This code doesn't make effective use of the module system; I have a thought
+that the code could be generalized over a later specificed type
+(i.e. 32-bit/64-bit floating-point, fixed-point, whatever). It became apparent
+that this would be useful when I discovered that the GPU I have apparently
+throws an error for 64bit operations(?).
+
+Within higher-dimensions, the stepping code is effectively the same for each
+dimension; smaller functions could likely be pulled out when refactoring.
+
+This was written naively with little-to-no thought of performance.
