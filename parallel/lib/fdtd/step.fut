@@ -2,6 +2,7 @@
 -- Functions to advance an FDTD field.
 
 -- Advance the 1D magnetic field.
+-- uHy/ut = uEz/ux
 entry hy_step_1d [n] (hy: [n]f64) (chyh: [n]f64) (chye: [n]f64)
                      (ez: [n]f64): [n]f64 = 
   concat_to n
@@ -9,6 +10,7 @@ entry hy_step_1d [n] (hy: [n]f64) (chyh: [n]f64) (chye: [n]f64)
     [hy[n-1]]
 
 -- Advance the 1D electric field.
+-- uEz/ut = uHy/ux
 entry ez_step_1d [n] (ez: [n]f64) (cezh: [n]f64) (ceze: [n]f64)
                      (hy: [n]f64): [n]f64 =
   concat_to n 
@@ -34,6 +36,7 @@ entry step_multiple_1d [n] (steps: i64)
 --
 
 -- Advance the 'Hx' portion of the 2d magnetic field.
+-- uHx/ut = -uEz/uy
 -- hx(m, n) = chxh(m, n) * hx(m, n) - chxe(m, n)
 --              * (ez(m, n + 1) - ez(m, n))
 def hx_step_2d [x][y] (hx: [x][y]f64) (chxh: [x][y]f64) (chxe: [x][y]f64)
@@ -41,13 +44,14 @@ def hx_step_2d [x][y] (hx: [x][y]f64) (chxh: [x][y]f64) (chxe: [x][y]f64)
   -- Concat within the inner array: 
   --  [[a, b, c], [1, 2, 3]] -> [[a, b, c, d], [1, 2, 3, 4]].
   map (\m -> 
-    let tmp = map (\n -> chxh[m, n] * hx[m, n] - chxe[m, n] 
-      * (ez[m, n + 1] - ez[m, n]))
+    let tmp = map (\n ->
+      chxh[m, n] * hx[m, n] - chxe[m, n] * (ez[m, n + 1] - ez[m, n]))
     (0..<y-1) in
     concat_to y tmp [hx[m, y-1]]) 
   (0..<x)
  
 -- Advance the 'Hy' portion of the 2d magnetic field.
+-- uHy/ut = uEz/ux
 -- hy(m, n) = chyh(m, n) * hy(m, n) + chye(m, n) 
 --              * (ez(m + 1, n) - ez(m, n))
 def hy_step_2d [x][y] (hy: [x][y]f64) (chyh: [x][y]f64) (chye: [x][y]f64)
@@ -62,6 +66,7 @@ def hy_step_2d [x][y] (hy: [x][y]f64) (chyh: [x][y]f64) (chye: [x][y]f64)
   concat_to x tmp [hy[x-1]]
 
 -- Advance the 'Ez' portion of the 2d magnetic field.
+-- uEz/ut = uHy/ux - uHx/uy
 -- ez(m, n) = ceze(m, n) * ez(m, n) + cezh(m, n) 
 --              * ((hy(m, n) - hy((m - 1), n)) - (hx(m, n) - hx(m, n - 1)))
 entry ez_step_2d [x][y] (ez: [x][y]f64) (cezh: [x][y]f64) (ceze: [x][y]f64)
@@ -69,7 +74,8 @@ entry ez_step_2d [x][y] (ez: [x][y]f64) (cezh: [x][y]f64) (ceze: [x][y]f64)
   -- Concat the beginning of ez within both the inner and outer arrays:
   --  [[1, 2, 3]] -> [[a, b, c, d], [1, 2, 3, 4]]
   let tmp = map (\m ->
-    let a = map (\n -> ceze[m, n] * ez[m, n] + cezh[m, n]
+    let a = map (\n ->
+      ceze[m, n] * ez[m, n] + cezh[m, n]
       * ((hy[m, n] - hy[m-1, n]) - (hx[m, n] - hx[m, n-1]))) (1..<y) in
     concat_to y [ez[m, 0]] a)
     (1..<x) in
@@ -107,6 +113,7 @@ entry step_multiple_2d [x][y] (steps: i64)
 --
 
 -- Advance the 'Hx' portion of the 3D magnetic field.
+-- uHx/ut = uEy/uz - uEz/uy
 -- hx(m, n, p) = chxh(m, n, p) * hx(m, n, p) +
 --  chxe(m, n, p) * ((ey(m, n, p + 1) - ey(m, n, p)) -
 --                   (ez(m, n + 1, p) - ez(m, n, p)))
@@ -124,6 +131,7 @@ def hx_step_3d [x][y][z] (hx: [x][y][z]f64) (chxh: [x][y][z]f64) (chxe: [x][y][z
     (0..<x)
 
 -- Advance the Hy portion of the 3D magnetic field.
+-- uHy/ut = uEz/ux - uEx/uz
 -- hy(m, n, p) = chyh(m, n, p) * hy(m, n, p) +
 --  chye(m, n, p) * ((ez(m + 1, n, p) - ez(m, n, p)) -
 --                   (ex(m, n, p + 1) - ex(m, n, p)))
@@ -141,6 +149,7 @@ def hy_step_3d [x][y][z] (hy: [x][y][z]f64) (chyh: [x][y][z]f64) (chye: [x][y][z
   [hy[x-1]]
 
 -- Advance the Hz portion of the 3D magnetic field.
+-- uHz/ut = uEx/uy - uEy/ux
 -- hz(m, n, p) = chzh(m, n, p) * hz(m, n, p) +
 --  chze(m, n, p) * ((ex(m, n + 1, p) - ex(m, n, p)) -
 --                   (ey(m + 1, n, p) - ey(m, n, p)))
@@ -169,6 +178,7 @@ entry magnetic_step_3d [x][y][z] (hx: [x][y][z]f64) (chxh: [x][y][z]f64) (chxe: 
   (hx, hy, hz)
 
 -- Advance the Ex portion of the 3D electric field.
+-- uEx/ut = uHz/uy - uHy/uz
 -- ex(m, n, p) = cexe(m, n, p) * ex(m, n, p) +
 --  cexh(m, n, p) * ((hz(m, n, p) - hz(m, n - 1, p)) -
 --                   (hy(m, n, p) - hy(m, n, p - 1)))
@@ -185,6 +195,7 @@ def ex_step_3d [x][y][z] (ex: [x][y][z]f64) (cexh: [x][y][z]f64) (cexe: [x][y][z
     (0..<x)
 
 -- Advance the Ey portion of the 3D electric field.
+-- uEy/ut = uHx/uz - uHz/ux
 -- ey(m, n, p) = ceye(m, n, p) * ey(m, n, p) +
 --  ceyh(m, n, p) * ((hx(m, n, p) - hx(m, n, p - 1)) -
 --                   (hz(m, n, p) - hz(m - 1, n, p)))
@@ -201,6 +212,7 @@ def ey_step_3d [x][y][z] (ey: [x][y][z]f64) (ceyh: [x][y][z]f64) (ceye: [x][y][z
     (1..<x))
 
 -- Advance the Ez portion of the 3D electric field.
+-- uEz/ut = uHy/ux - uHx/uy
 -- ez(m, n, p) = ceze(m, n, p) * ez(m, n, p) +
 --  cezh(m, n, p) * ((hy(m, n, p) - hy(m - 1, n, p)) -
 --                   (hx(m, n, p) - hx(m, n - 1, p)))
